@@ -84,7 +84,7 @@ public class PreProcessTask extends DefaultTask {
             File file = entry.inBase.resolve(entry.relPath).toFile();
             File outFile = entry.outBase.resolve(entry.relPath).toFile();
 
-            preProcessor.convertFile(file, outFile, getProject().getLogger());
+            preProcessor.convertFile(file, outFile);
         }
 
         getProject().getLogger().info("PreProcessed Successfully");

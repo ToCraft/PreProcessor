@@ -1,6 +1,5 @@
 package dev.tocraft.gradle.preprocess;
 
-import org.gradle.api.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -181,8 +180,7 @@ public class PreProcessor {
         }
     }
 
-    public void convertFile(File inFile, File outFile, Logger logger) {
-        logger.info("Got that once");
+    public void convertFile(File inFile, File outFile) {
         try {
             List<String> lines = Files.readAllLines(inFile.toPath());
             lines = convertSource(lines, inFile.getName());
@@ -190,7 +188,6 @@ public class PreProcessor {
             outFile.getParentFile().mkdirs();
             try (FileWriter writer = new FileWriter(outFile)) {
                 for (String line : lines) {
-                    logger.info(line);
                     writer.write(line + "\n");
                 }
             }
