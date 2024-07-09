@@ -6,7 +6,7 @@ public class ParseException extends RuntimeException {
      */
     private int lineNumber = -1;
     /**
-     * The file where the exception occured
+     * The file where the exception occurred
      */
     private String fileName = "";
 
@@ -14,8 +14,8 @@ public class ParseException extends RuntimeException {
         super(message);
     }
 
-    public ParseException(String messsage, int lineNumber, String fileName) {
-        this(messsage);
+    public ParseException(String message, int lineNumber, String fileName) {
+        this(message);
         setLineNumber(lineNumber);
         setFileName(fileName);
     }

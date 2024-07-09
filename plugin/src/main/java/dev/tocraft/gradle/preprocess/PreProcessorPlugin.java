@@ -9,7 +9,7 @@ import org.gradle.api.tasks.Copy;
 
 import java.io.File;
 
-@SuppressWarnings({"unused", "deprecation"})
+@SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
