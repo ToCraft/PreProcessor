@@ -10,6 +10,7 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.SourceTask;
 
 import java.io.File;
+import java.util.List;
 
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
@@ -30,7 +31,6 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 }
                 sourceJavaTask.dependsOn(preprocess);
                 sourceJavaTask.setSource(preprocess.get().getTarget().get());
-                //sourceSet.getJava().setSrcDirs(List.of(preprocess.get().getTarget().get()));
 
                 project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), Copy.class, task -> {
                     task.getOutputs().upToDateWhen(a -> false);
