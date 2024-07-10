@@ -6,6 +6,8 @@ package dev.tocraft.gradle.preprocess;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.SourceTask;
 
 import java.io.File;
 
@@ -13,15 +15,32 @@ import java.io.File;
 public class PreProcessorPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
-        PreProcessTask preProcessTask = project.getTasks().create(PreProcessTask.ID, PreProcessTask.class);
+        PreprocessExtension ext = project.getExtensions().create("preprocess", PreprocessExtension.class);
 
-        project.getTasks().register("applyPreProcessor", Copy.class, task -> {
-            task.getOutputs().upToDateWhen(a -> false);
-            task.dependsOn(preProcessTask);
-            task.from(preProcessTask.getTarget().get());
-            for (File file : preProcessTask.getSources().get()) {
-                task.into(file);
-            }
-        });
+        SourceSetContainer sourceSetContainer = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSetContainer != null) {
+            sourceSetContainer.configureEach(sourceSet -> {
+                var preprocess = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class);
+                preprocess.get().getSources().convention(project.files(sourceSet.getJava().getSrcDirs()).getFiles());
+                preprocess.get().getVars().convention(ext.vars);
+
+                SourceTask sourceJavaTask = (SourceTask) project.getTasks().findByName(sourceSet.getTaskName("source", "Java"));
+                if (sourceJavaTask == null) {
+                    sourceJavaTask = (SourceTask) project.getTasks().getByName(sourceSet.getTaskName("compile", "java"));
+                }
+                sourceJavaTask.dependsOn(preprocess);
+                sourceJavaTask.setSource(preprocess.get().getTarget().get());
+                //sourceSet.getJava().setSrcDirs(List.of(preprocess.get().getTarget().get()));
+
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), Copy.class, task -> {
+                    task.getOutputs().upToDateWhen(a -> false);
+                    task.dependsOn(preprocess);
+                    task.from(preprocess.get().getTarget().get());
+                    for (File file : preprocess.get().getSources().get()) {
+                        task.into(file);
+                    }
+                });
+            });
+        }
     }
 }

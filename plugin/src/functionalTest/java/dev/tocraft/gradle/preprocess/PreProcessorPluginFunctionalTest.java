@@ -48,7 +48,6 @@ class PreProcessorPluginFunctionalTest {
                         }
                         
                         preprocess {
-                            sources = sourceSets.main.java.srcDirs
                             vars.put("a", "1");
                         }
                         """);
@@ -71,7 +70,7 @@ class PreProcessorPluginFunctionalTest {
         GradleRunner runner = GradleRunner.create();
         runner.forwardOutput();
         runner.withPluginClasspath();
-        runner.withArguments("applyPreProcessor");
+        runner.withArguments("applyPreProcessJava");
         runner.withProjectDir(projectDir);
         BuildResult result = runner.build();
 
