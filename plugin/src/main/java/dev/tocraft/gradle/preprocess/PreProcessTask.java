@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Set;
 
 public class PreProcessTask extends DefaultTask {
-    public static final String ID = "preprocess";
-
     private final MapProperty<String, Object> vars;
     private final Property<File> target;
     private final ListProperty<File> sources;
@@ -34,8 +32,7 @@ public class PreProcessTask extends DefaultTask {
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();
 
-        //noinspection deprecation
-        this.target = factory.property(File.class).convention(new File(this.getProject().getBuildDir(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
+        this.target = factory.property(File.class).convention(new File(this.getProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
     }
 
     private record Entry(String relPath, Path inBase, Path outBase) {
