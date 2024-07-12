@@ -5,11 +5,16 @@ package dev.tocraft.gradle.preprocess;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.SourceTask;
+import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
@@ -20,25 +25,38 @@ public class PreProcessorPlugin implements Plugin<Project> {
         SourceSetContainer sourceSetContainer = project.getExtensions().findByType(SourceSetContainer.class);
         if (sourceSetContainer != null) {
             sourceSetContainer.configureEach(sourceSet -> {
-                var preprocess = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class);
-                preprocess.get().getSources().convention(project.files(sourceSet.getJava().getSrcDirs()).getFiles());
-                preprocess.get().getVars().convention(ext.vars);
+                var preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class);
+                preprocessJava.get().getSources().convention(sourceSet.getJava().getSrcDirs());
+                preprocessJava.get().getVars().convention(ext.vars);
 
                 SourceTask sourceJavaTask = (SourceTask) project.getTasks().findByName(sourceSet.getTaskName("source", "Java"));
-                if (sourceJavaTask == null) {
-                    sourceJavaTask = (SourceTask) project.getTasks().getByName(sourceSet.getTaskName("compile", "java"));
+                if (sourceJavaTask != null) {
+                    sourceJavaTask.dependsOn(preprocessJava);
+                    sourceJavaTask.setSource(preprocessJava.get().getTarget().get());
                 }
-                sourceJavaTask.dependsOn(preprocess);
-                sourceJavaTask.setSource(preprocess.get().getTarget().get());
+                JavaCompile javaCompileTask = (JavaCompile) project.getTasks().getByName(sourceSet.getTaskName("compile", "Java"));
+                javaCompileTask.dependsOn(preprocessJava);
+                javaCompileTask.setSource(preprocessJava.get().getTarget().get());
 
-                // we do this in afterEvaluate to ensure the user can still configure the preprocess task
-                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), Copy.class, task -> {
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), task -> {
                     task.getOutputs().upToDateWhen(a -> false);
-                    task.dependsOn(preprocess);
-                    task.from(preprocess.get().getTarget().get());
-                    for (File file : preprocess.get().getSources().get()) {
-                        task.into(file);
-                    }
+                    task.dependsOn(preprocessJava);
+
+                    task.doFirst(t -> {
+                        // place file in their original source folder
+                        for (File srcFolder : preprocessJava.get().getSources().get()) {
+                            final File srcFolderFile = srcFolder.isAbsolute() ? srcFolder : new File(project.getProjectDir(), srcFolder.getPath());
+                            Path inBasePath = srcFolderFile.toPath();
+                            for (File file : project.fileTree(inBasePath)) {
+                                Path relPath = inBasePath.relativize(file.toPath());
+                                try (Writer writer = new FileWriter(inBasePath.resolve(relPath).toFile())) {
+                                    writer.write(Files.readString(preprocessJava.get().getTarget().get().toPath().resolve(relPath)));
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    });
                 });
             });
         }

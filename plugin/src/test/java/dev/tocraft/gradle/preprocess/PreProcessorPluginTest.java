@@ -17,10 +17,6 @@ class PreProcessorPluginTest {
     void pluginRegistersATask() {
         // Create a test project and apply the plugin
         Project project = ProjectBuilder.builder().build();
-        project.getPlugins().apply("dev.tocraft.preprocessor");
-
-        // Verify the result
-        //assertNotNull(project.getTasks().findByName("preprocess"));
-        //assertNotNull(project.getTasks().findByName("applyPreProcessor"));
+        assertNotNull(project.getPlugins().apply("dev.tocraft.preprocessor"));
     }
 }

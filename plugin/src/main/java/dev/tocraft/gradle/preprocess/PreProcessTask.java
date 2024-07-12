@@ -23,7 +23,7 @@ public class PreProcessTask extends DefaultTask {
     private final ListProperty<File> sources;
     private final ConfigurableFileCollection outcomingFiles;
     private final ConfigurableFileCollection incomingFiles;
-    public final List<File> sourceList = new ArrayList<>();
+    public final List<Entry> sourceFiles = new ArrayList<>();
 
     @Inject
     public PreProcessTask(final ObjectFactory factory) {
@@ -35,7 +35,7 @@ public class PreProcessTask extends DefaultTask {
         this.target = factory.property(File.class).convention(new File(this.getProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
     }
 
-    private record Entry(String relPath, Path inBase, Path outBase) {
+    public record Entry(String relPath, Path inBase, Path outBase) {
     }
 
     @Input
@@ -74,16 +74,13 @@ public class PreProcessTask extends DefaultTask {
      */
     @TaskAction
     public void preprocess() {
-        sourceList.addAll(sources.get());
-
-        if (sourceList.isEmpty()) {
-            throw new ParseException("No sources defined or source folder is empty!" + sourceList);
+        if (sources.get().isEmpty()) {
+            throw new ParseException("No sources defined or source folder is empty!" + sources.get());
         }
 
         PreProcessor preProcessor = new PreProcessor(vars.get());
 
-        List<Entry> sourceFiles = new ArrayList<>();
-        for (File srcFolder : sourceList) {
+        for (File srcFolder : sources.get()) {
             final File srcFolderFile = srcFolder.isAbsolute() ? srcFolder : new File(this.getProject().getProjectDir(), srcFolder.getPath());
             Path inBasePath = srcFolderFile.toPath();
             for (File file : this.getProject().fileTree(inBasePath)) {
@@ -92,7 +89,7 @@ public class PreProcessTask extends DefaultTask {
             }
         }
 
-        getProject().getLogger().info("Source folders in use: {}", sourceList);
+        getProject().getLogger().info("Source folders in use: {}", sources.get());
 
         getProject().delete(target.get());
 
