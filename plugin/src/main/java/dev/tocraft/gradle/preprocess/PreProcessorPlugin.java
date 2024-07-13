@@ -9,13 +9,6 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.compile.JavaCompile;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
     @Override
@@ -38,26 +31,17 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 javaCompileTask.dependsOn(preprocessJava);
                 javaCompileTask.setSource(preprocessJava.get().getTarget().get());
 
-                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), task -> {
-                    task.getOutputs().upToDateWhen(a -> false);
-                    task.dependsOn(preprocessJava);
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), ApplyPreProcessTask.class, preprocessJava.get());
+            });
+        }
 
-                    task.doFirst(t -> {
-                        // place file in their original source folder
-                        for (File srcFolder : preprocessJava.get().getSources().get()) {
-                            final File srcFolderFile = srcFolder.isAbsolute() ? srcFolder : new File(project.getProjectDir(), srcFolder.getPath());
-                            Path inBasePath = srcFolderFile.toPath();
-                            for (File file : project.fileTree(inBasePath)) {
-                                Path relPath = inBasePath.relativize(file.toPath());
-                                try (Writer writer = new FileWriter(inBasePath.resolve(relPath).toFile())) {
-                                    writer.write(Files.readString(preprocessJava.get().getTarget().get().toPath().resolve(relPath)));
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        }
-                    });
-                });
+        if (!project.getSubprojects().isEmpty()) {
+            project.getTasks().register("applyPreProcess").configure(task -> {
+                for (Project subproject : project.getSubprojects()) {
+                    for (ApplyPreProcessTask subApplyPreProcessTask : subproject.getTasks().withType(ApplyPreProcessTask.class)) {
+                        task.dependsOn(subApplyPreProcessTask);
+                    }
+                }
             });
         }
     }

@@ -23,16 +23,15 @@ public class PreProcessTask extends DefaultTask {
     private final ListProperty<File> sources;
     private final ConfigurableFileCollection outcomingFiles;
     private final ConfigurableFileCollection incomingFiles;
-    public final List<Entry> sourceFiles = new ArrayList<>();
 
     @Inject
     public PreProcessTask(final ObjectFactory factory) {
         this.vars = factory.mapProperty(String.class, Object.class);
         this.sources = factory.listProperty(File.class);
+        this.target = factory.property(File.class).convention(new File(this.getProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
+
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();
-
-        this.target = factory.property(File.class).convention(new File(this.getProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
     }
 
     public record Entry(String relPath, Path inBase, Path outBase) {
@@ -79,6 +78,8 @@ public class PreProcessTask extends DefaultTask {
         }
 
         PreProcessor preProcessor = new PreProcessor(vars.get());
+
+        List<Entry> sourceFiles = new ArrayList<>();
 
         for (File srcFolder : sources.get()) {
             final File srcFolderFile = srcFolder.isAbsolute() ? srcFolder : new File(this.getProject().getProjectDir(), srcFolder.getPath());
