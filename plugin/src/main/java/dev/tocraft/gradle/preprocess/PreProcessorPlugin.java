@@ -5,9 +5,10 @@ package dev.tocraft.gradle.preprocess;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.SourceTask;
-import org.gradle.api.tasks.compile.JavaCompile;
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
@@ -15,23 +16,34 @@ public class PreProcessorPlugin implements Plugin<Project> {
     public void apply(Project project) {
         PreprocessExtension ext = project.getExtensions().create("preprocess", PreprocessExtension.class);
 
+        boolean hasKotlin = project.getPlugins().hasPlugin("kotlin");
+
         SourceSetContainer sourceSetContainer = project.getExtensions().findByType(SourceSetContainer.class);
         if (sourceSetContainer != null) {
             sourceSetContainer.configureEach(sourceSet -> {
+                // Java Source
                 var preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class);
                 preprocessJava.get().getSources().convention(sourceSet.getJava().getSrcDirs());
                 preprocessJava.get().getVars().convention(ext.vars);
 
-                SourceTask sourceJavaTask = (SourceTask) project.getTasks().findByName(sourceSet.getTaskName("source", "Java"));
-                if (sourceJavaTask != null) {
-                    sourceJavaTask.dependsOn(preprocessJava);
-                    sourceJavaTask.setSource(preprocessJava.get().getTarget().get());
-                }
-                JavaCompile javaCompileTask = (JavaCompile) project.getTasks().getByName(sourceSet.getTaskName("compile", "Java"));
+                SourceTask javaCompileTask = (SourceTask) project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
                 javaCompileTask.dependsOn(preprocessJava);
                 javaCompileTask.setSource(preprocessJava.get().getTarget().get());
 
                 project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), ApplyPreProcessTask.class, preprocessJava.get());
+
+                // Kotlin
+                if (hasKotlin) {
+                    var preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class);
+                    preprocessKotlin.get().getSources().convention(((SourceDirectorySet) sourceSet.getExtensions().getByName("kotlin")).getSrcDirs());
+                    preprocessKotlin.get().getVars().convention(ext.vars);
+
+                    KotlinCompile kotlinCompileTask = (KotlinCompile) project.getTasks().getByName(sourceSet.getCompileTaskName("kotlin"));
+                    kotlinCompileTask.dependsOn(preprocessKotlin);
+                    kotlinCompileTask.setSource(preprocessKotlin.get().getTarget().get());
+
+                    project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Kotlin"), ApplyPreProcessTask.class, preprocessKotlin.get());
+                }
             });
         }
 

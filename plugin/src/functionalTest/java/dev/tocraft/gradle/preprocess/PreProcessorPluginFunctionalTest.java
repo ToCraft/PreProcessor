@@ -37,6 +37,10 @@ class PreProcessorPluginFunctionalTest {
         return new File(projectDir, "src/main/java/test/Test.java");
     }
 
+    private File getTestKotlinFile() {
+        return new File(projectDir, "src/main/kotlin/test/Test.kt");
+    }
+
     @Test
     void canApplyPreprocessTask() throws IOException {
         writeString(getSettingsFile(), "");
@@ -44,9 +48,10 @@ class PreProcessorPluginFunctionalTest {
                 """
                         plugins {
                             id('java')
+                            id('org.jetbrains.kotlin.jvm') version '2.0.0'
                             id('dev.tocraft.preprocessor')
                         }
-                        
+                                                
                         preprocess {
                             vars.put("a", "1");
                         }
@@ -54,7 +59,7 @@ class PreProcessorPluginFunctionalTest {
 
         writeString(getTestJavaFile(), """
                 package test;
-                
+                                
                 class Test {
                     public void main(String... args) {
                         //#if a
@@ -65,23 +70,34 @@ class PreProcessorPluginFunctionalTest {
                     }
                 }
                 """);
+        writeString(getTestKotlinFile(), """
+                class Test {
+                    fun main(args : Array<String>) {
+                        //#if a
+                        //$$ System.out.println("Test succeeded.");
+                        //#else
+                        System.out.println("Test failed.");
+                        //#endif
+                    }
+                }
+                """);
 
-        // Run the build
         GradleRunner runner = GradleRunner.create();
         runner.forwardOutput();
         runner.withPluginClasspath();
-        runner.withArguments("applyPreProcessJava");
         runner.withProjectDir(projectDir);
-        BuildResult result = runner.build();
+
+        // Run the java build
+        runner.withArguments("applyPreProcessJava");
+        BuildResult javaResult = runner.build();
 
         // Verify the result
-        for (BuildTask task : result.getTasks()) {
+        for (BuildTask task : javaResult.getTasks()) {
             assertEquals(TaskOutcome.SUCCESS, task.getOutcome());
         }
-
         assertEquals("""
                 package test;
-                
+                                
                 class Test {
                     public void main(String... args) {
                         //#if a
@@ -92,6 +108,27 @@ class PreProcessorPluginFunctionalTest {
                     }
                 }
                 """, Files.readString(getTestJavaFile().toPath()));
+
+        // Run the kotlin build
+        runner.withArguments("applyPreProcessKotlin");
+        runner.withProjectDir(projectDir);
+        BuildResult kotlinResult = runner.build();
+
+        // Verify the result
+        for (BuildTask task : kotlinResult.getTasks()) {
+            assertEquals(TaskOutcome.SUCCESS, task.getOutcome());
+        }
+        assertEquals("""
+                class Test {
+                    fun main(args : Array<String>) {
+                        //#if a
+                        System.out.println("Test succeeded.");
+                        //#else
+                        //$$ System.out.println("Test failed.");
+                        //#endif
+                    }
+                }
+                """, Files.readString(getTestKotlinFile().toPath()));
     }
 
     private void writeString(File file, String string) throws IOException {
