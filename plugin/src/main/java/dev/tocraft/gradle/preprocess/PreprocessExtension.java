@@ -5,4 +5,5 @@ import java.util.Map;
 
 public class PreprocessExtension {
     public Map<String, Object> vars = new HashMap<>();
+    public Map<String, Keywords> keywords = new HashMap<>();
 }

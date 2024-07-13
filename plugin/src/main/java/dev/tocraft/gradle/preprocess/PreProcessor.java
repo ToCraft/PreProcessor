@@ -2,24 +2,23 @@ package dev.tocraft.gradle.preprocess;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PreProcessor {
     private final Map<String, Object> vars;
+    private final Map<String, Keywords> keywordsMap;
 
     public PreProcessor(Map<String, Object> vars) {
+        this(vars, new HashMap<>());
+    }
+
+    public PreProcessor(Map<String, Object> vars, Map<String, Keywords> keywordsMap) {
         this.vars = vars;
+        this.keywordsMap = keywordsMap;
     }
 
     private static final Pattern EXPR_PATTERN = Pattern.compile("(.+)(==|!=|<=|>=|<|>)(.+)");
@@ -96,27 +95,29 @@ public class PreProcessor {
     public List<String> convertSource(List<String> lines, @Nullable String fileName) {
         Stack<IfStackEntry> stack = new Stack<>();
         Stack<Integer> indentStack = new Stack<>();
-        AtomicBoolean active = new AtomicBoolean(true);
-        AtomicInteger n = new AtomicInteger();
+        boolean active = true;
+        int n = 0;
 
-        List<String> mappedLines = lines.stream().map(line -> {
-            n.getAndIncrement();
+        Keywords keywords = keywordsMap.getOrDefault(getExtension(fileName), Keywords.DEFAULT_KEYWORDS);
+
+        List<String> mappedLines = new ArrayList<>();
+        for (String line : lines) {
+            n++;
 
             String trimmed = line.trim();
-            String mapped;
             int indentation = line.length() - line.trim().length();
-            if (trimmed.startsWith(Keywords.IF.keyword)) {
-                boolean result = _evalCondition(trimmed.substring(Keywords.IF.keyword.length()), n.get(), fileName);
+            if (trimmed.startsWith(keywords.IF())) {
+                boolean result = _evalCondition(trimmed.substring(keywords.IF().length()), n, fileName);
                 stack.push(new IfStackEntry(result, false, result));
                 indentStack.push(indentation);
-                active.set(active.get() && result);
-                mapped = line;
-            } else if (trimmed.startsWith(Keywords.ELSEIF.keyword)) {
+                active = active && result;
+                mappedLines.add(line);
+            } else if (trimmed.startsWith(keywords.ELSEIF())) {
                 if (stack.isEmpty()) {
-                    throw new ParseException("elseif without If-Statement!", n.get(), fileName);
+                    throw new ParseException("elseif without If-Statement!", n, fileName);
                 }
                 if (stack.lastElement().elseFound) {
-                    throw new ParseException("elseif after else!", n.get(), fileName);
+                    throw new ParseException("elseif after else!", n, fileName);
                 }
 
                 indentStack.pop();
@@ -125,56 +126,54 @@ public class PreProcessor {
                 if (stack.lastElement().trueFound) {
                     IfStackEntry last = stack.pop();
                     stack.push(new IfStackEntry(false, last.elseFound, last.trueFound));
-                    active.set(false);
+                    active = false;
                 } else {
-                    boolean result = _evalCondition(trimmed.substring(Keywords.ELSEIF.keyword.length()), n.get(), fileName);
+                    boolean result = _evalCondition(trimmed.substring(keywords.ELSEIF().length()), n, fileName);
                     stack.pop();
                     stack.push(new IfStackEntry(result, false, result));
-                    active.set(stack.stream().allMatch(it -> it.currentValue));
+                    active = stack.stream().allMatch(it -> it.currentValue);
                 }
-                mapped = line;
-            } else if (trimmed.startsWith(Keywords.ELSE.keyword)) {
+                mappedLines.add(line);
+            } else if (trimmed.startsWith(keywords.ELSE())) {
                 if (stack.isEmpty()) {
-                    throw new ParseException("Unexpected else", n.get(), fileName);
+                    throw new ParseException("Unexpected else", n, fileName);
                 }
                 IfStackEntry entry = stack.pop();
                 stack.push(new IfStackEntry(!entry.trueFound, true, entry.trueFound));
                 indentStack.pop();
                 indentStack.push(indentation);
-                active.set(stack.stream().allMatch(it -> it.currentValue));
-                mapped = line;
-            } else if (trimmed.startsWith(Keywords.ENDIF.keyword)) {
+                active = stack.stream().allMatch(it -> it.currentValue);
+                mappedLines.add(line);
+            } else if (trimmed.startsWith(keywords.ENDIF())) {
                 if (stack.isEmpty()) {
-                    throw new ParseException("endif without If-Statement!", n.get(), fileName);
+                    throw new ParseException("endif without If-Statement!", n, fileName);
                 }
                 stack.pop();
                 indentStack.pop();
-                active.set(stack.stream().allMatch(it -> it.currentValue));
-                mapped = line;
+                active = stack.stream().allMatch(it -> it.currentValue);
+                mappedLines.add(line);
             } else {
-                if (active.get()) {
-                    if (trimmed.startsWith(Keywords.EVAL.keyword)) {
-                        mapped = line.replaceFirst(Matcher.quoteReplacement(Keywords.EVAL.keyword) + " ?", "");
+                if (active) {
+                    if (trimmed.startsWith(keywords.EVAL())) {
+                        mappedLines.add(line.replaceFirst(Matcher.quoteReplacement(keywords.EVAL()) + " ?", ""));
                     } else {
-                        mapped = line;
+                        mappedLines.add(line);
                     }
                 } else {
                     int currIndent = indentStack.peek();
                     if (trimmed.isEmpty()) {
-                        mapped = " ".repeat(currIndent) + Keywords.EVAL.keyword;
-                    } else if (!trimmed.startsWith(Keywords.EVAL.keyword) && currIndent <= indentation) {
-                        mapped = " ".repeat(currIndent) + Keywords.EVAL.keyword + " " + line.substring(currIndent);
+                        mappedLines.add(" ".repeat(currIndent) + keywords.EVAL());
+                    } else if (!trimmed.startsWith(keywords.EVAL()) && currIndent <= indentation) {
+                        mappedLines.add(" ".repeat(currIndent) + keywords.EVAL() + " " + line.substring(currIndent));
                     } else {
-                        mapped = line;
+                        mappedLines.add(line);
                     }
                 }
             }
-
-            return mapped;
-        }).toList();
+        }
 
         if (!stack.isEmpty()) {
-            throw new ParseException("Missing endif!", n.get(), fileName);
+            throw new ParseException("Missing endif!", n, fileName);
         } else {
             return mappedLines;
         }
@@ -182,7 +181,7 @@ public class PreProcessor {
 
     public void convertFile(File inFile, File outFile) {
         try {
-            List<String> lines = Files.readAllLines(inFile.toPath());
+            List<String> lines = readFileLines(inFile);
             lines = convertSource(lines, inFile.getName());
             //noinspection ResultOfMethodCallIgnored
             outFile.getParentFile().mkdirs();
@@ -196,7 +195,25 @@ public class PreProcessor {
         }
     }
 
+    private static List<String> readFileLines(File file) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+        List<String> lines = new ArrayList<>(reader.lines().toList());
+        reader.close();
+        return lines;
+    }
+
     record IfStackEntry(Boolean currentValue, Boolean elseFound, Boolean trueFound) {
 
+    }
+
+    private static String getExtension(@Nullable String fileName) {
+        String extension = "";
+        if (fileName != null) {
+            int i = fileName.lastIndexOf('.');
+            if (i > 0) {
+                extension = fileName.substring(i + 1);
+            }
+        }
+        return extension;
     }
 }

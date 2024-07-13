@@ -19,6 +19,7 @@ import java.util.Set;
 
 public class PreProcessTask extends DefaultTask {
     private final MapProperty<String, Object> vars;
+    private final MapProperty<String, Keywords> keywords;
     private final Property<File> target;
     private final ListProperty<File> sources;
     private final ConfigurableFileCollection outcomingFiles;
@@ -28,6 +29,7 @@ public class PreProcessTask extends DefaultTask {
     public PreProcessTask(final ObjectFactory factory) {
         this.vars = factory.mapProperty(String.class, Object.class);
         this.sources = factory.listProperty(File.class);
+        this.keywords = factory.mapProperty(String.class, Keywords.class);
         this.target = factory.property(File.class).convention(new File(this.getProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
 
         this.incomingFiles = factory.fileCollection();
@@ -50,6 +52,11 @@ public class PreProcessTask extends DefaultTask {
     @Input
     public MapProperty<String, Object> getVars() {
         return vars;
+    }
+
+    @Input
+    public MapProperty<String, Keywords> getKeywords() {
+        return keywords;
     }
 
     @OutputFiles
@@ -77,7 +84,7 @@ public class PreProcessTask extends DefaultTask {
             throw new ParseException("No sources defined or source folder is empty!" + sources.get());
         }
 
-        PreProcessor preProcessor = new PreProcessor(vars.get());
+        PreProcessor preProcessor = new PreProcessor(vars.get(), keywords.get());
 
         List<Entry> sourceFiles = new ArrayList<>();
 

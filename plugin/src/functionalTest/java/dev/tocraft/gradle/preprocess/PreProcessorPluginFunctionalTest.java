@@ -41,6 +41,10 @@ class PreProcessorPluginFunctionalTest {
         return new File(projectDir, "src/main/kotlin/test/Test.kt");
     }
 
+    private File getTestJsonFile() {
+        return new File(projectDir, "src/main/resources/test.json5");
+    }
+
     @Test
     void canApplyPreprocessTask() throws IOException {
         writeString(getSettingsFile(), "");
@@ -51,7 +55,7 @@ class PreProcessorPluginFunctionalTest {
                             id('org.jetbrains.kotlin.jvm') version '2.0.0'
                             id('dev.tocraft.preprocessor')
                         }
-                                                
+                        
                         preprocess {
                             vars.put("a", "1");
                         }
@@ -59,7 +63,7 @@ class PreProcessorPluginFunctionalTest {
 
         writeString(getTestJavaFile(), """
                 package test;
-                                
+                
                 class Test {
                     public void main(String... args) {
                         //#if a
@@ -81,6 +85,15 @@ class PreProcessorPluginFunctionalTest {
                     }
                 }
                 """);
+        writeString(getTestJsonFile(), """
+                {
+                    //#if a
+                    //$$ "test": "123"
+                    //#else
+                    "test": "456"
+                    //#endif
+                }
+                """);
 
         GradleRunner runner = GradleRunner.create();
         runner.forwardOutput();
@@ -97,7 +110,7 @@ class PreProcessorPluginFunctionalTest {
         }
         assertEquals("""
                 package test;
-                                
+                
                 class Test {
                     public void main(String... args) {
                         //#if a
@@ -129,6 +142,25 @@ class PreProcessorPluginFunctionalTest {
                     }
                 }
                 """, Files.readString(getTestKotlinFile().toPath()));
+
+        // Run the resources build
+        runner.withArguments("applyPreProcessResources");
+        runner.withProjectDir(projectDir);
+        BuildResult resourcesResult = runner.build();
+
+        // Verify the result
+        for (BuildTask task : resourcesResult.getTasks()) {
+            assertEquals(TaskOutcome.SUCCESS, task.getOutcome());
+        }
+        assertEquals("""
+                {
+                    //#if a
+                    "test": "123"
+                    //#else
+                    //$$ "test": "456"
+                    //#endif
+                }
+                """, Files.readString(getTestJsonFile().toPath()));
     }
 
     private void writeString(File file, String string) throws IOException {

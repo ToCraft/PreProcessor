@@ -3,12 +3,6 @@ package dev.tocraft.gradle.preprocess;
 /**
  * The defined keywords that will be taken into account by the preprocessor
  */
-public enum Keywords {
-    IF("//#if"), ELSEIF("//#elseif"), ELSE("//#else"), ENDIF("//#endif"), EVAL("//$$");
-
-    Keywords(String keyword) {
-        this.keyword = keyword;
-    }
-
-    public final String keyword;
+public record Keywords(String IF, String ELSEIF, String ELSE, String ENDIF, String EVAL) {
+    public static final Keywords DEFAULT_KEYWORDS = new Keywords("//#if", "//#elseif", "//#else", "//#endif", "//$$");
 }
