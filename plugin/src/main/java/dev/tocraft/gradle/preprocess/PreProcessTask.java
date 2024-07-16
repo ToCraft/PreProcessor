@@ -109,6 +109,7 @@ public class PreProcessTask extends DefaultTask {
             File outFile = entry.outBase.resolve(entry.relPath).toFile();
 
             preProcessor.convertFile(inFile, outFile);
+
             foundInFiles.add(inFile);
             foundOutFiles.add(outFile);
         }

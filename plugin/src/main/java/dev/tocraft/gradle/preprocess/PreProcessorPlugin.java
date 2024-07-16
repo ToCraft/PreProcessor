@@ -54,6 +54,7 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 preprocessResources.get().getSources().convention(sourceSet.getResources().getSrcDirs());
                 preprocessResources.get().getVars().convention(ext.vars);
                 preprocessResources.get().getKeywords().convention(ext.keywords);
+
                 ProcessResources processResources = (ProcessResources) project.getTasks().getByName(sourceSet.getProcessResourcesTaskName());
                 processResources.dependsOn(preprocessResources);
                 processResources.from(preprocessResources.get().getTarget().get());

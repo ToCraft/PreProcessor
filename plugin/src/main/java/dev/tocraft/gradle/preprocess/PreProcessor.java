@@ -2,8 +2,10 @@ package dev.tocraft.gradle.preprocess;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -181,7 +183,7 @@ public class PreProcessor {
 
     public void convertFile(File inFile, File outFile) {
         try {
-            List<String> lines = readFileLines(inFile);
+            List<String> lines = Files.readAllLines(inFile.toPath());
             lines = convertSource(lines, inFile.getName());
             //noinspection ResultOfMethodCallIgnored
             outFile.getParentFile().mkdirs();
@@ -191,22 +193,22 @@ public class PreProcessor {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            // some error while reading. Just copy the file
+            try {
+                //noinspection ResultOfMethodCallIgnored
+                outFile.getParentFile().mkdirs();
+                Files.copy(inFile.toPath(), outFile.toPath());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
-    }
-
-    private static List<String> readFileLines(File file) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
-        List<String> lines = new ArrayList<>(reader.lines().toList());
-        reader.close();
-        return lines;
     }
 
     record IfStackEntry(Boolean currentValue, Boolean elseFound, Boolean trueFound) {
 
     }
 
-    private static String getExtension(@Nullable String fileName) {
+    public static String getExtension(@Nullable String fileName) {
         String extension = "";
         if (fileName != null) {
             int i = fileName.lastIndexOf('.');
@@ -214,6 +216,6 @@ public class PreProcessor {
                 extension = fileName.substring(i + 1);
             }
         }
-        return extension;
+        return extension.toLowerCase().strip();
     }
 }
