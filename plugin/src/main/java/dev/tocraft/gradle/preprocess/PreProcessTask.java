@@ -1,6 +1,7 @@
 package dev.tocraft.gradle.preprocess;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
@@ -30,7 +31,13 @@ public class PreProcessTask extends DefaultTask {
         this.vars = factory.mapProperty(String.class, Object.class);
         this.sources = factory.listProperty(File.class);
         this.keywords = factory.mapProperty(String.class, Keywords.class);
-        this.target = factory.property(File.class).convention(new File(this.getProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + this.getTaskIdentity().name));
+        StringBuilder target = new StringBuilder(getProject().getName());
+        Project project = getProject();
+        while (project.getParent() != null) {
+            target.insert(0, project.getParent().getName() + File.separatorChar);
+            project = project.getParent();
+        }
+        this.target = factory.property(File.class).convention(new File(this.getProject().getRootProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + target + File.separatorChar + this.getTaskIdentity().name));
 
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();
