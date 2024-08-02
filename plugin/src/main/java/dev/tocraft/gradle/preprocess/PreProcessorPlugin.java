@@ -6,11 +6,14 @@ package dev.tocraft.gradle.preprocess;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
+
+import java.io.File;
 
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
@@ -23,45 +26,59 @@ public class PreProcessorPlugin implements Plugin<Project> {
         SourceSetContainer sourceSetContainer = project.getExtensions().findByType(SourceSetContainer.class);
         if (sourceSetContainer != null) {
             sourceSetContainer.configureEach(sourceSet -> {
+                String generated = "generated" + File.separatorChar + "preprocessed" + File.separatorChar + sourceSet.getName() + File.separatorChar;
+
                 // Java Source
-                var preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class);
-                preprocessJava.get().getSources().convention(sourceSet.getJava().getSrcDirs());
-                preprocessJava.get().getVars().convention(ext.vars);
-                preprocessJava.get().getKeywords().convention(ext.keywords);
+                var preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class, task -> {
+                    task.getSources().convention(sourceSet.getJava().getSrcDirs());
+                    task.getVars().convention(ext.vars);
+                    task.getKeywords().convention(ext.keywords);
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generated  + "java").map(RegularFile::getAsFile));
+                    task.getOutputs().upToDateWhen(t -> false);
+                });
 
-                JavaCompile javaCompileTask = (JavaCompile) project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
-                javaCompileTask.dependsOn(preprocessJava);
-                javaCompileTask.setSource(preprocessJava.flatMap(PreProcessTask::getTarget));
+                project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class, task -> {
+                    task.dependsOn(preprocessJava);
+                    task.setSource(preprocessJava.flatMap(PreProcessTask::getTarget));
+                });
 
-                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), ApplyPreProcessTask.class, preprocessJava);
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), ApplyPreProcessTask.class, preprocessJava).configure(task -> task.dependsOn(preprocessJava));
 
                 // Kotlin
                 if (hasKotlin) {
-                    var preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class);
-                    preprocessKotlin.get().getSources().convention(((SourceDirectorySet) sourceSet.getExtensions().getByName("kotlin")).getSrcDirs());
-                    preprocessKotlin.get().getVars().convention(ext.vars);
-                    preprocessKotlin.get().getKeywords().convention(ext.keywords);
+                    var preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class, task -> {
+                        task.getSources().convention(((SourceDirectorySet) sourceSet.getExtensions().getByName("kotlin")).getSrcDirs());
+                        task.getVars().convention(ext.vars);
+                        task.getKeywords().convention(ext.keywords);
+                        task.getTarget().set(project.getLayout().getBuildDirectory().file(generated  + "kotlin").map(RegularFile::getAsFile));
+                        task.getOutputs().upToDateWhen(t -> false);
+                    });
 
-                    KotlinCompile kotlinCompileTask = (KotlinCompile) project.getTasks().getByName(sourceSet.getCompileTaskName("kotlin"));
-                    kotlinCompileTask.dependsOn(preprocessKotlin);
-                    kotlinCompileTask.setSource(preprocessKotlin.flatMap(PreProcessTask::getTarget));
+                    project.getTasks().named(sourceSet.getCompileTaskName("kotlin"), KotlinCompile.class, task -> {
+                        task.dependsOn(preprocessKotlin);
+                        task.setSource(preprocessKotlin.flatMap(PreProcessTask::getTarget));
+                    });
 
-                    project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Kotlin"), ApplyPreProcessTask.class, preprocessKotlin);
+                    project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Kotlin"), ApplyPreProcessTask.class, preprocessKotlin).configure(task -> task.dependsOn(preprocessKotlin));
                 }
 
                 // Resources
-                var preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class);
-                preprocessResources.get().getSources().convention(sourceSet.getResources().getSrcDirs());
-                preprocessResources.get().getVars().convention(ext.vars);
-                preprocessResources.get().getKeywords().convention(ext.keywords);
+                var preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class, task -> {
+                    task.getSources().convention(sourceSet.getResources().getSrcDirs());
+                    task.getVars().convention(ext.vars);
+                    task.getKeywords().convention(ext.keywords);
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "resources").map(RegularFile::getAsFile));
+                    task.getOutputs().upToDateWhen(t -> false);
+                });
 
-                ProcessResources processResources = (ProcessResources) project.getTasks().getByName(sourceSet.getProcessResourcesTaskName());
-                processResources.dependsOn(preprocessResources);
-                processResources.from(preprocessResources.flatMap(PreProcessTask::getTarget));
-                // why do I need this?!?
-                processResources.setDuplicatesStrategy(DuplicatesStrategy.INCLUDE);
+                project.getTasks().named(sourceSet.getProcessResourcesTaskName(), ProcessResources.class, task -> {
+                    task.dependsOn(preprocessResources);
+                    task.from(preprocessResources.flatMap(PreProcessTask::getTarget));
+                    // why do I need this?!?
+                    task.setDuplicatesStrategy(DuplicatesStrategy.INCLUDE);
+                });
 
-                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Resources"), ApplyPreProcessTask.class, preprocessResources);
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Resources"), ApplyPreProcessTask.class, preprocessResources).configure(task -> task.dependsOn(preprocessResources));
             });
         }
 

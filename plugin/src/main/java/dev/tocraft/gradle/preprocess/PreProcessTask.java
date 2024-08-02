@@ -11,6 +11,8 @@ import org.gradle.api.tasks.*;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,7 +32,7 @@ public class PreProcessTask extends DefaultTask {
         this.vars = factory.mapProperty(String.class, Object.class);
         this.sources = factory.listProperty(File.class);
         this.keywords = factory.mapProperty(String.class, Keywords.class);
-        this.target = factory.property(File.class).convention(getProject().getLayout().getBuildDirectory().getAsFile().map(f -> new File(f, "preprocessor" + File.separatorChar + this.getTaskIdentity().name)));
+        this.target = factory.property(File.class);
 
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();
@@ -116,6 +118,15 @@ public class PreProcessTask extends DefaultTask {
 
         this.outcomingFiles.setFrom(foundOutFiles);
         this.incomingFiles.setFrom(foundInFiles);
+
+        try {
+            Path infoFile = target.get().toPath().getParent().resolve(getName() + ".txt");
+            //noinspection ResultOfMethodCallIgnored
+            infoFile.getParent().toFile().mkdirs();
+            Files.writeString(infoFile, "Target: " + getTarget().get().toPath() + "\nSources: " + getSources().get() + "\nTotal Files: " + sourceFiles.size());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         getProject().getLogger().info("PreProcessed Successfully");
     }

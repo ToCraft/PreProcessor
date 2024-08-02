@@ -29,8 +29,6 @@ public class ApplyPreProcessTask extends DefaultTask {
 
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();
-
-        dependsOn(preProcessTask);
     }
 
     @Input
