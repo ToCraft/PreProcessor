@@ -1,8 +1,7 @@
 package dev.tocraft.gradle.preprocess;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.*;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -24,9 +23,9 @@ public class ApplyPreProcessTask extends DefaultTask {
     private final ConfigurableFileCollection incomingFiles;
 
     @Inject
-    public ApplyPreProcessTask(final ObjectFactory factory, final PreProcessTask preProcessTask) {
-        this.targets = factory.listProperty(File.class).convention(preProcessTask.getSources().get());
-        this.source = factory.property(File.class).convention(preProcessTask.getTarget().get());
+    public ApplyPreProcessTask(final ObjectFactory factory, final TaskProvider<PreProcessTask> preProcessTask) {
+        this.targets = factory.listProperty(File.class).convention(preProcessTask.flatMap(PreProcessTask::getSources));
+        this.source = factory.property(File.class).convention(preProcessTask.flatMap(PreProcessTask::getTarget));
 
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();

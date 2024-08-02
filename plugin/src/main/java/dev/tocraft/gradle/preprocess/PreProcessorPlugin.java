@@ -8,7 +8,7 @@ import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.SourceSetContainer;
-import org.gradle.api.tasks.SourceTask;
+import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
@@ -29,11 +29,11 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 preprocessJava.get().getVars().convention(ext.vars);
                 preprocessJava.get().getKeywords().convention(ext.keywords);
 
-                SourceTask javaCompileTask = (SourceTask) project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
+                JavaCompile javaCompileTask = (JavaCompile) project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
                 javaCompileTask.dependsOn(preprocessJava);
-                javaCompileTask.setSource(preprocessJava.get().getTarget().get());
+                javaCompileTask.setSource(preprocessJava.flatMap(PreProcessTask::getTarget));
 
-                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), ApplyPreProcessTask.class, preprocessJava.get());
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Java"), ApplyPreProcessTask.class, preprocessJava);
 
                 // Kotlin
                 if (hasKotlin) {
@@ -44,9 +44,9 @@ public class PreProcessorPlugin implements Plugin<Project> {
 
                     KotlinCompile kotlinCompileTask = (KotlinCompile) project.getTasks().getByName(sourceSet.getCompileTaskName("kotlin"));
                     kotlinCompileTask.dependsOn(preprocessKotlin);
-                    kotlinCompileTask.setSource(preprocessKotlin.get().getTarget().get());
+                    kotlinCompileTask.setSource(preprocessKotlin.flatMap(PreProcessTask::getTarget));
 
-                    project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Kotlin"), ApplyPreProcessTask.class, preprocessKotlin.get());
+                    project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Kotlin"), ApplyPreProcessTask.class, preprocessKotlin);
                 }
 
                 // Resources
@@ -57,11 +57,11 @@ public class PreProcessorPlugin implements Plugin<Project> {
 
                 ProcessResources processResources = (ProcessResources) project.getTasks().getByName(sourceSet.getProcessResourcesTaskName());
                 processResources.dependsOn(preprocessResources);
-                processResources.from(preprocessResources.get().getTarget().get());
+                processResources.from(preprocessResources.flatMap(PreProcessTask::getTarget));
                 // why do I need this?!?
                 processResources.setDuplicatesStrategy(DuplicatesStrategy.INCLUDE);
 
-                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Resources"), ApplyPreProcessTask.class, preprocessResources.get());
+                project.getTasks().register(sourceSet.getTaskName("applyPreProcess", "Resources"), ApplyPreProcessTask.class, preprocessResources);
             });
         }
 

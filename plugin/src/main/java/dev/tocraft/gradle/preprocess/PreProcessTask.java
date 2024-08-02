@@ -1,7 +1,6 @@
 package dev.tocraft.gradle.preprocess;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
@@ -31,13 +30,7 @@ public class PreProcessTask extends DefaultTask {
         this.vars = factory.mapProperty(String.class, Object.class);
         this.sources = factory.listProperty(File.class);
         this.keywords = factory.mapProperty(String.class, Keywords.class);
-        StringBuilder target = new StringBuilder(getProject().getName());
-        Project project = getProject();
-        while (project.getParent() != null) {
-            target.insert(0, project.getParent().getName() + File.separatorChar);
-            project = project.getParent();
-        }
-        this.target = factory.property(File.class).convention(new File(this.getProject().getRootProject().getLayout().getBuildDirectory().getAsFile().get(), "preprocessor" + File.separatorChar + target + File.separatorChar + this.getTaskIdentity().name));
+        this.target = factory.property(File.class).convention(getProject().getLayout().getBuildDirectory().getAsFile().map(f -> new File(f, "preprocessor" + File.separatorChar + this.getTaskIdentity().name)));
 
         this.incomingFiles = factory.fileCollection();
         this.outcomingFiles = factory.fileCollection();
@@ -88,7 +81,7 @@ public class PreProcessTask extends DefaultTask {
     @TaskAction
     public void preprocess() {
         if (sources.get().isEmpty()) {
-            throw new ParseException("No sources defined or source folder is empty!" + sources.get());
+            throw new ParseException("No sources defined or source folder is empty!");
         }
 
         PreProcessor preProcessor = new PreProcessor(vars.get(), keywords.get());
@@ -104,7 +97,7 @@ public class PreProcessTask extends DefaultTask {
             }
         }
 
-        getProject().getLogger().info("Source folders in use: {}", sources.get());
+        getProject().getLogger().info("Source folders in use: {}", sources);
 
         getProject().delete(target.get());
 
