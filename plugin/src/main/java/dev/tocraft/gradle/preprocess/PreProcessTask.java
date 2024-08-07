@@ -19,6 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * The actual preprocessor task
+ */
 public class PreProcessTask extends DefaultTask {
     private final MapProperty<String, Object> vars;
     private final MapProperty<String, Keywords> keywords;
@@ -27,6 +30,9 @@ public class PreProcessTask extends DefaultTask {
     private final ConfigurableFileCollection outcomingFiles;
     private final ConfigurableFileCollection incomingFiles;
 
+    /**
+     * @param factory some object factory to create the properties
+     */
     @Inject
     public PreProcessTask(final ObjectFactory factory) {
         this.vars = factory.mapProperty(String.class, Object.class);
@@ -38,34 +44,54 @@ public class PreProcessTask extends DefaultTask {
         this.outcomingFiles = factory.fileCollection();
     }
 
-    public record Entry(String relPath, Path inBase, Path outBase) {
+    private record Entry(String relPath, Path inBase, Path outBase) {
     }
 
+    /**
+     * @return the target folder where the preprocessed files will be written to
+     */
     @Input
     public Property<File> getTarget() {
         return target;
     }
 
+    /**
+     * @return the directories where the files, that shall be preprocessed, lie
+     */
     @InputFiles
     public ListProperty<File> getSources() {
         return sources;
     }
 
+    /**
+     * @return the vars that shall be used for the custom if-statements
+     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#vars
+     */
     @Input
     public MapProperty<String, Object> getVars() {
         return vars;
     }
 
+    /**
+     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#keywords
+     * @return custom keywords, where the key is something the target file name should end with (e.g. '.json') and the Keywords are the custom keywords for this file type.
+     */
     @Input
     public MapProperty<String, Keywords> getKeywords() {
         return keywords;
     }
 
+    /**
+     * @return the preprocessed files
+     */
     @OutputFiles
     public FileCollection getOutcomingFiles() {
         return this.outcomingFiles;
     }
 
+    /**
+     * @return the files to be preprocessed
+     */
     @Internal
     public FileCollection getIncomingFiles() {
         return this.incomingFiles;

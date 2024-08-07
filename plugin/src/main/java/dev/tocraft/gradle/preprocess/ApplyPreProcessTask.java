@@ -16,12 +16,19 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Task to overwrite the original source files with the results of the {@link dev.tocraft.gradle.preprocess.PreProcessTask}
+ */
 public class ApplyPreProcessTask extends DefaultTask {
     private final Property<File> source;
     private final ListProperty<File> targets;
     private final ConfigurableFileCollection outcomingFiles;
     private final ConfigurableFileCollection incomingFiles;
 
+    /**
+     * @param factory some object factory to crate the properties
+     * @param preProcessTask the delgate preprocess task to be used
+     */
     @Inject
     public ApplyPreProcessTask(final ObjectFactory factory, final TaskProvider<PreProcessTask> preProcessTask) {
         this.targets = factory.listProperty(File.class).convention(preProcessTask.flatMap(PreProcessTask::getSources));
@@ -31,21 +38,33 @@ public class ApplyPreProcessTask extends DefaultTask {
         this.outcomingFiles = factory.fileCollection();
     }
 
+    /**
+     * @return source folder, where the preprocess task outputs it's files
+     */
     @Input
     public Property<File> getSource() {
         return source;
     }
 
+    /**
+     * @return target folder where the sources files should be overwritten
+     */
     @InputFiles
     public ListProperty<File> getTargets() {
         return targets;
     }
 
+    /**
+     * @return the overwritten files
+     */
     @OutputFiles
     public FileCollection getOutcomingFiles() {
         return this.outcomingFiles;
     }
 
+    /**
+     * @return the files the preprocess task outputs, that will be processed by this task
+     */
     @Internal
     public FileCollection getIncomingFiles() {
         return this.incomingFiles;

@@ -1,5 +1,7 @@
 package dev.tocraft.gradle.preprocess;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -7,7 +9,11 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Sometime in the future, the PreProcess will also auto-handle the imports
+ */
 @SuppressWarnings("unused")
+@ApiStatus.Experimental
 public class ImportManager {
     private static List<String> organizeImports(List<String> sourceLines) {
         Set<String> imports = new TreeSet<>();

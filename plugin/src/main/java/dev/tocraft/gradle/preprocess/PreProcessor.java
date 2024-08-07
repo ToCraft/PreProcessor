@@ -10,14 +10,30 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * The actual preprocessing is happening here
+ */
 public class PreProcessor {
+    /**
+     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#vars
+     */
     private final Map<String, Object> vars;
+    /**
+     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#keywords
+     */
     private final Map<String, Keywords> keywordsMap;
 
+    /**
+     * @param vars the vars that shall be used for the custom if-statements
+     */
     public PreProcessor(Map<String, Object> vars) {
         this(vars, new HashMap<>());
     }
 
+    /**
+     * @param vars the vars that shall be used for the custom if-statements
+     * @param keywordsMap custom keywords, where the key is something the target file name should end with (e.g. '.json') and the Keywords are the custom keywords for this file type.
+     */
     public PreProcessor(Map<String, Object> vars, Map<String, Keywords> keywordsMap) {
         this.vars = vars;
         this.keywordsMap = keywordsMap;
@@ -36,10 +52,20 @@ public class PreProcessor {
         }
     }
 
+    /**
+     * @param condition will be read and evaluated
+     * @return the value of the evaluated condition
+     */
     public boolean evalExpression(String condition) {
         return evalExpression(condition, -1, null);
     }
 
+    /**
+     * @param condition will be read and evaluated
+     * @param lineNumber required for error throwing
+     * @param fileName required for error throwing
+     * @return the value of the evaluated condition
+     */
     public boolean evalExpression(String condition, int lineNumber, @Nullable String fileName) {
         String[] parts = condition.split(OR_PATTERN);
         if (parts.length > 1) {
@@ -90,10 +116,19 @@ public class PreProcessor {
         }
     }
 
+    /**
+     * @param lines the file, already read as lines
+     * @return the preprocessed lines
+     */
     public List<String> convertSource(List<String> lines) {
         return convertSource(lines, null);
     }
 
+    /**
+     * @param lines the file, already read as lines
+     * @param fileName the file name for error throwing
+     * @return the preprocessed lines
+     */
     public List<String> convertSource(List<String> lines, @Nullable String fileName) {
         Stack<IfStackEntry> stack = new Stack<>();
         Stack<Integer> indentStack = new Stack<>();
@@ -181,6 +216,10 @@ public class PreProcessor {
         }
     }
 
+    /**
+     * @param inFile the file that shall be preprocessed
+     * @param outFile the file where the preprocessed lines shall be written to
+     */
     public void convertFile(File inFile, File outFile) {
         try {
             List<String> lines = Files.readAllLines(inFile.toPath());
@@ -204,11 +243,11 @@ public class PreProcessor {
         }
     }
 
-    record IfStackEntry(Boolean currentValue, Boolean elseFound, Boolean trueFound) {
+    private record IfStackEntry(Boolean currentValue, Boolean elseFound, Boolean trueFound) {
 
     }
 
-    public static String getExtension(@Nullable String fileName) {
+    private static String getExtension(@Nullable String fileName) {
         String extension = "";
         if (fileName != null) {
             int i = fileName.lastIndexOf('.');

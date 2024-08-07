@@ -15,6 +15,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 import java.io.File;
 
+/**
+ * Main class for the PreProcessor-Plugin
+ */
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
     @Override

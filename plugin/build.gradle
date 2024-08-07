@@ -11,12 +11,13 @@ plugins {
     id "java"
     id "java-gradle-plugin"
     id "maven-publish"
+    id 'com.gradle.plugin-publish' version '1.2.1'
 }
 
 group = "dev.tocraft"
 def pluginId = 'preprocessor'
 
-version = base_version + "-SNAPSHOT"
+version = "1.0"
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -54,11 +55,17 @@ testing {
 }
 
 gradlePlugin {
+    website = 'https://github.com/ToCraft/PreProcessor'
+    vcsUrl = 'https://github.com/ToCraft/PreProcessor'
+
     // Define the plugin
     plugins {
         preprocessor {
             id = group + "." + pluginId
             implementationClass = 'dev.tocraft.gradle.preprocess.PreProcessorPlugin'
+            displayName = 'PreProcessor Plugin'
+            description = 'Comment PreProcessor for Java, Kotlin & Text Resources!'
+            tags.set(['preprocess', 'java', 'kotlin', 'resources'])
         }
     }
 }
@@ -91,7 +98,7 @@ ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        pluginMaven(MavenPublication) {
             configureEach {
                 groupId = group
                 artifactId = pluginId
@@ -137,21 +144,6 @@ publishing {
                 credentials {
                     username = "tocraft"
                     password = mavenPass
-                }
-            }
-        }
-        String ossrhUsername = System.getenv("OSSRH_USERNAME")
-        String ossrhPassword = System.getenv("OSSRH_PASSWORD")
-        if (ossrhUsername != null && ossrhPassword != null) {
-            maven {
-                def releaseRepo = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                def snapshotRepo = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-
-                name = "OSSRH"
-                url = isReleaseVersion ? releaseRepo : snapshotRepo
-                credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
                 }
             }
         }
