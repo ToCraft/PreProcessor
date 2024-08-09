@@ -4,7 +4,7 @@
 
 This Gradle-Plugin is inspired by [JCP](https://github.com/raydac/java-comment-preprocessor).
 
-It automatically processes Kotlin, Java and Resources, that are readable as text files.
+It automatically preprocesses Kotlin, Java and Text Resources.
 
 ## Build File
 
