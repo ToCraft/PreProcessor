@@ -9,6 +9,7 @@ import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
@@ -32,11 +33,11 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 String generated = "generated" + File.separatorChar + "preprocessed" + File.separatorChar + sourceSet.getName() + File.separatorChar;
 
                 // Java Source
-                var preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class, task -> {
+                TaskProvider<PreProcessTask> preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class, task -> {
                     task.getSources().convention(sourceSet.getJava().getSrcDirs());
                     task.getVars().convention(ext.vars);
                     task.getKeywords().convention(ext.keywords);
-                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generated  + "java").map(RegularFile::getAsFile));
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "java").map(RegularFile::getAsFile));
                     task.getOutputs().upToDateWhen(t -> false);
                 });
 
@@ -49,11 +50,11 @@ public class PreProcessorPlugin implements Plugin<Project> {
 
                 // Kotlin
                 if (hasKotlin) {
-                    var preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class, task -> {
+                    TaskProvider<PreProcessTask> preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class, task -> {
                         task.getSources().convention(((SourceDirectorySet) sourceSet.getExtensions().getByName("kotlin")).getSrcDirs());
                         task.getVars().convention(ext.vars);
                         task.getKeywords().convention(ext.keywords);
-                        task.getTarget().set(project.getLayout().getBuildDirectory().file(generated  + "kotlin").map(RegularFile::getAsFile));
+                        task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "kotlin").map(RegularFile::getAsFile));
                         task.getOutputs().upToDateWhen(t -> false);
                     });
 
@@ -66,7 +67,7 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 }
 
                 // Resources
-                var preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class, task -> {
+                TaskProvider<PreProcessTask> preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class, task -> {
                     task.getSources().convention(sourceSet.getResources().getSrcDirs());
                     task.getVars().convention(ext.vars);
                     task.getKeywords().convention(ext.keywords);

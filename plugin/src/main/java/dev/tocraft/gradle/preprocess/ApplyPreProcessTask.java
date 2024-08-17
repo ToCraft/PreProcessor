@@ -1,7 +1,8 @@
 package dev.tocraft.gradle.preprocess;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.file.*;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -26,7 +27,7 @@ public class ApplyPreProcessTask extends DefaultTask {
     private final ConfigurableFileCollection incomingFiles;
 
     /**
-     * @param factory some object factory to crate the properties
+     * @param factory        some object factory to crate the properties
      * @param preProcessTask the delgate preprocess task to be used
      */
     @Inject

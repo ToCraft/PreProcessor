@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Sometime in the future, the PreProcess will also auto-handle the imports
@@ -30,7 +31,7 @@ public class ImportManager {
             }
         }
 
-        while (codeLines.get(0).isBlank()) {
+        while (codeLines.get(0).trim().isEmpty()) {
             codeLines.remove(0);
         }
 
@@ -44,7 +45,7 @@ public class ImportManager {
         modifiedLines.addAll(imports.stream().filter(imp -> {
             String[] impArr = imp.split("\\.");
             return anyStringInListContains(codeLines, impArr[impArr.length - 1]);
-        }).map(imp -> "import " + imp + ";").toList());
+        }).map(imp -> "import " + imp + ";").collect(Collectors.toList()));
         modifiedLines.add("");
 
         modifiedLines.addAll(codeLines);
@@ -63,7 +64,7 @@ public class ImportManager {
 
     private static boolean anyStringInListContains(List<String> list, String str) {
         for (String s : list) {
-            if (!s.trim().startsWith("//") && s.strip().contains(str)) {
+            if (!s.trim().startsWith("//") && s.trim().contains(str)) {
                 return true;
             }
         }

@@ -31,7 +31,7 @@ public class PreProcessor {
     }
 
     /**
-     * @param vars the vars that shall be used for the custom if-statements
+     * @param vars        the vars that shall be used for the custom if-statements
      * @param keywordsMap custom keywords, where the key is something the target file name should end with (e.g. '.json') and the Keywords are the custom keywords for this file type.
      */
     public PreProcessor(Map<String, Object> vars, Map<String, Keywords> keywordsMap) {
@@ -61,9 +61,9 @@ public class PreProcessor {
     }
 
     /**
-     * @param condition will be read and evaluated
+     * @param condition  will be read and evaluated
      * @param lineNumber required for error throwing
-     * @param fileName required for error throwing
+     * @param fileName   required for error throwing
      * @return the value of the evaluated condition
      */
     public boolean evalExpression(String condition, int lineNumber, @Nullable String fileName) {
@@ -81,15 +81,37 @@ public class PreProcessor {
             try {
                 int lhs = Integer.parseInt(getVarValue(matcher.group(1).trim()));
                 int rhs = Integer.parseInt(getVarValue(matcher.group(3).trim()));
-                return switch (matcher.group(2)) {
-                    case "==" -> lhs == rhs;
-                    case "!=" -> lhs != rhs;
-                    case ">=" -> lhs >= rhs;
-                    case "<=" -> lhs <= rhs;
-                    case ">" -> lhs > rhs;
-                    case "<" -> lhs < rhs;
-                    default -> throw new ParseException("Invalid Expression!", lineNumber, fileName);
-                };
+                boolean bool;
+                switch (matcher.group(2)) {
+                    case "==": {
+                        bool = lhs == rhs;
+                        break;
+                    }
+                    case "!=": {
+                        bool = lhs != rhs;
+                        break;
+                    }
+                    case ">=": {
+                        bool = lhs >= rhs;
+                        break;
+                    }
+                    case "<=": {
+                        bool = lhs <= rhs;
+                        break;
+                    }
+                    case ">": {
+                        bool = lhs > rhs;
+                        break;
+                    }
+                    case "<": {
+                        bool = lhs < rhs;
+                        break;
+                    }
+                    default: {
+                        throw new ParseException("Invalid Expression!", lineNumber, fileName);
+                    }
+                }
+                return bool;
             } catch (NumberFormatException e) {
                 throw new ParseException(e.getMessage(), lineNumber, fileName);
             }
@@ -125,7 +147,7 @@ public class PreProcessor {
     }
 
     /**
-     * @param lines the file, already read as lines
+     * @param lines    the file, already read as lines
      * @param fileName the file name for error throwing
      * @return the preprocessed lines
      */
@@ -199,9 +221,9 @@ public class PreProcessor {
                 } else {
                     int currIndent = indentStack.peek();
                     if (trimmed.isEmpty()) {
-                        mappedLines.add(" ".repeat(currIndent) + keywords.EVAL());
+                        mappedLines.add(repeat(currIndent, " ") + keywords.EVAL());
                     } else if (!trimmed.startsWith(keywords.EVAL()) && currIndent <= indentation) {
-                        mappedLines.add(" ".repeat(currIndent) + keywords.EVAL() + " " + line.substring(currIndent));
+                        mappedLines.add(repeat(currIndent, " ") + keywords.EVAL() + " " + line.substring(currIndent));
                     } else {
                         mappedLines.add(line);
                     }
@@ -217,7 +239,7 @@ public class PreProcessor {
     }
 
     /**
-     * @param inFile the file that shall be preprocessed
+     * @param inFile  the file that shall be preprocessed
      * @param outFile the file where the preprocessed lines shall be written to
      */
     public void convertFile(File inFile, File outFile) {
@@ -243,7 +265,16 @@ public class PreProcessor {
         }
     }
 
-    private record IfStackEntry(Boolean currentValue, Boolean elseFound, Boolean trueFound) {
+    private static final class IfStackEntry {
+        private final boolean currentValue;
+        private final boolean elseFound;
+        private final boolean trueFound;
+
+        public IfStackEntry(boolean currentValue, boolean elseFound, boolean trueFound) {
+            this.currentValue = currentValue;
+            this.elseFound = elseFound;
+            this.trueFound = trueFound;
+        }
 
     }
 
@@ -255,6 +286,10 @@ public class PreProcessor {
                 extension = fileName.substring(i + 1);
             }
         }
-        return extension.toLowerCase().strip();
+        return extension.toLowerCase().trim();
+    }
+
+    private static String repeat(int n, String s) {
+        return new String(new char[n]).replace("\0", s);
     }
 }

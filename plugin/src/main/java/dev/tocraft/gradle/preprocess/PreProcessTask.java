@@ -44,7 +44,16 @@ public class PreProcessTask extends DefaultTask {
         this.outcomingFiles = factory.fileCollection();
     }
 
-    private record Entry(String relPath, Path inBase, Path outBase) {
+    private static final class Entry {
+        private final String relPath;
+        private final Path inBase;
+        private final Path outBase;
+
+        public Entry(String relPath, Path inBase, Path outBase) {
+            this.relPath = relPath;
+            this.inBase = inBase;
+            this.outBase = outBase;
+        }
     }
 
     /**
@@ -73,8 +82,8 @@ public class PreProcessTask extends DefaultTask {
     }
 
     /**
-     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#keywords
      * @return custom keywords, where the key is something the target file name should end with (e.g. '.json') and the Keywords are the custom keywords for this file type.
+     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#keywords
      */
     @Input
     public MapProperty<String, Keywords> getKeywords() {
@@ -149,7 +158,7 @@ public class PreProcessTask extends DefaultTask {
             Path infoFile = target.get().toPath().getParent().resolve(getName() + ".txt");
             //noinspection ResultOfMethodCallIgnored
             infoFile.getParent().toFile().mkdirs();
-            Files.writeString(infoFile, "Target: " + getTarget().get().toPath() + "\nSources: " + getSources().get() + "\nTotal Files: " + sourceFiles.size());
+            Files.write(infoFile, ("Target: " + getTarget().get().toPath() + "\nSources: " + getSources().get() + "\nTotal Files: " + sourceFiles.size()).getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

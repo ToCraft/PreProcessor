@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * A simple unit test for the 'org.example.greeting' plugin.
  */
 class PreProcessorTest {
-    private static final Map<String, Object> vars = new HashMap<>() {
+    private static final Map<String, Object> vars = new HashMap<String, Object>() {
         {
             put("zero", "0");
             put("one", "1");
@@ -92,527 +92,659 @@ class PreProcessorTest {
     @Test
     void testConvertSource() {
         // unexpected endif
-        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<>() {
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
             {
                 add("//#endif");
             }
         }));
         // unexpected else
-        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<>() {
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
             {
                 add("//#else");
             }
         }));
         // unexpected elseif
-        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<>() {
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
             {
                 add("//#elseif");
             }
         }));
         // elseif after else
-        assertThrows(ParseException.class, () -> preProcessor.convertSource("""
-                //#if one
-                //#else
-                //#elseif one
-                //#endif
-                """.lines().toList()));
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//#else");
+                add("//#elseif one");
+                add("//#endif");
+            }
+        }));
         // missing endif
-        assertThrows(ParseException.class, () -> preProcessor.convertSource("""
-                //#if one
-                """.lines().toList()));
-        assertThrows(ParseException.class, () -> preProcessor.convertSource("""
-                //#if one
-                //#if one
-                //#if one
-                //#endif
-                """.lines().toList()));
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+            }
+        }));
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//#if one");
+                add("//#if one");
+                add("//#endif");
+            }
+        }));
         // missing space
-        assertThrows(ParseException.class, () -> preProcessor.convertSource("""
-                //#ifone
-                //#endif
-                """.lines().toList()));
-        assertThrows(ParseException.class, () -> preProcessor.convertSource("""
-                //#if zero
-                //#elseiftwo
-                //#endif
-                """.lines().toList()));
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#ifone");
+                add("//#endif");
+            }
+        }));
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//#elseiftwo");
+                add("//#endif");
+            }
+        }));
         // empty if condition
-        assertThrows(ParseException.class, () -> preProcessor.convertSource("""
-                //#if
-                //#endif
-                """.lines().toList()));
+        assertThrows(ParseException.class, () -> preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if");
+                add("//#endif");
+            }
+        }));
 
-        // test with code
+        // test with add("code");
         // if one ... endif
-        assertEquals("""
-                //#if one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
         // if zero ... endif
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("code");
+                add("//#endif");
+            }
+        }));
         // if one ... else ... endif
-        assertEquals("""
-                //#if one
-                code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }));
         // if zero ... else ... endif
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }));
         // if one ... elseif zero ... endif
-        assertEquals("""
-                //#if one
-                code
-                //#elseif zero
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                code
-                //#elseif zero
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif zero
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#elseif zero
-                code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif zero
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                code
-                //#elseif zero
-                code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif zero
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif zero");
+                add("code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
         // if zero ... elseif one ... endif
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }));
         // if one ... elseif one ... endif
-        assertEquals("""
-                //#if one
-                code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                code
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }));
         // if ... elseif ... else ... endif
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                //$$ code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                code
-                //#elseif one
-                //$$  code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //$$ code
-                //#elseif one
-                //$$  code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//$$ code");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
         // multiple elseif
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#elseif zero
-                //$$ code
-                //#elseif zero
-                code
-                //#elseif zero
-                //$$ code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
         // nested if
-        assertEquals("""
-                //#if zero
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#else
-                       //#if zero
-                       //$$ code
-                       //#else
-                       code
-                       //#endif
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#else
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#else");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#else");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#endif");
+            }
+        }));
         // nested elseif
-        assertEquals("""
-                //#if zero
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#elseif one
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#elseif one
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif one
-                       //#if zero
-                       //$$ code
-                       //#else
-                       code
-                       //#endif
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                code
-                //#elseif one
-                       //#if zero
-                       code
-                       //#else
-                       code
-                       //#endif
-                //#else
-                code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if zero
-                //$$ code
-                //#elseif zero
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#elseif zero
-                //$$ code
-                //#else
-                code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if zero
-                //$$ code
-                //#elseif zero
-                       //#if zero
-                       //$$ code
-                       //#else
-                       //$$ code
-                       //#endif
-                //#elseif zero
-                //$$ code
-                //#else
-                //$$ code
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                //#elseif one
-                       //#if one
-                       //$$ code
-                       //#else
-                       //#endif
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //#elseif one
-                       //#if one
-                       code
-                       //#else
-                       //#endif
-                //#endif
-                """.lines().toList()));
-        assertEquals("""
-                //#if one
-                //#elseif one
-                       //#if one
-                       //#endif
-                //$$        code
-                //#endif
-                """.lines().toList(), preProcessor.convertSource("""
-                //#if one
-                //#elseif one
-                       //#if one
-                       //#endif
-                       code
-                //#endif
-                """.lines().toList()));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#elseif one");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#elseif one");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif one");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("code");
+                add("//#elseif one");
+                add("//#if zero");
+                add("code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#else");
+                add("code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("//#elseif zero");
+                add("//#if zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("//#else");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//#elseif one");
+                add("//#if one");
+                add("//$$ code");
+                add("//#else");
+                add("//#endif");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//#elseif one");
+                add("//#if one");
+                add("code");
+                add("//#else");
+                add("//#endif");
+                add("//#endif");
+            }
+        }));
+        assertEquals(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//#elseif one");
+                add("//#if one");
+                add("//#endif");
+                add("//$$ code");
+                add("//#endif");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if one");
+                add("//#elseif one");
+                add("//#if one");
+                add("//#endif");
+                add("code");
+                add("//#endif");
+            }
+        }));
     }
 }

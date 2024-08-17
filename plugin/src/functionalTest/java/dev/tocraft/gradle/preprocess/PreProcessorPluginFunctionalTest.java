@@ -49,51 +49,48 @@ class PreProcessorPluginFunctionalTest {
     void canApplyPreprocessTask() throws IOException {
         writeString(getSettingsFile(), "");
         writeString(getBuildFile(),
-                """
-                        plugins {
-                            id('java')
-                            id('org.jetbrains.kotlin.jvm') version '2.0.0'
-                            id('dev.tocraft.preprocessor')
-                        }
-                        
-                        preprocess {
-                            vars.put("a", "1");
-                        }
-                        """);
+                "plugins {\n" +
+                "id('java')\n" +
+                "id('org.jetbrains.kotlin.jvm') version '2.0.0'\n" +
+                "id('dev.tocraft.preprocessor')\n" +
+                "}\n" +
+                "preprocess {\n" +
+                "vars.put(\"a\", \"1\");\n" +
+                "}\n"
+        );
 
-        writeString(getTestJavaFile(), """
-                package test;
-                
-                class Test {
-                    public void main(String... args) {
-                        //#if a
-                        //$$ System.out.println("Test succeeded.");
-                        //#else
-                        System.out.println("Test failed.");
-                        //#endif
-                    }
-                }
-                """);
-        writeString(getTestKotlinFile(), """
-                class Test {
-                    fun main(args : Array<String>) {
-                        //#if a
-                        //$$ System.out.println("Test succeeded.");
-                        //#else
-                        System.out.println("Test failed.");
-                        //#endif
-                    }
-                }
-                """);
-        writeString(getTestJsonFile(), """
-                {
-                    //#if a
-                    //$$ "test": "123"
-                    //#else
-                    "test": "456"
-                    //#endif
-                }
-                """);
+        writeString(getTestJavaFile(),
+            "package test;\n" +
+                    "class Test {\n" +
+                    "public void main(String... args) {\n" +
+                    "//#if a\n" +
+                    "//$$ System.out.println(\"Test succeeded.\");\n" +
+                    "//#else\n" +
+                    "System.out.println(\"Test failed\");\n" +
+                    "//#endif\n" +
+                    "}\n" +
+                    "}\n"
+        );
+        writeString(getTestKotlinFile(),
+                        "class Test {\n" +
+                        "fun main(args : Array<String>) {\n" +
+                        "//#if a\n" +
+                        "//$$ System.out.println(\"Test succeeded.\");\n" +
+                        "//#else\n" +
+                        "System.out.println(\"Test failed\");\n" +
+                        "//#endif\n" +
+                        "}\n" +
+                        "}\n"
+                );
+        writeString(getTestJsonFile(),
+                "{\n" +
+                        "//#if a\n" +
+                        "//$$ \"test\": \"123\"\n" +
+                        "//#else\n" +
+                        "\"test\": \"456\"\n" +
+                        "//#endif\n" +
+                        "}\n"
+        );
 
         GradleRunner runner = GradleRunner.create();
         runner.forwardOutput();
@@ -108,19 +105,17 @@ class PreProcessorPluginFunctionalTest {
         for (BuildTask task : javaResult.getTasks()) {
             assertEquals(TaskOutcome.SUCCESS, task.getOutcome());
         }
-        assertEquals("""
-                package test;
-                
-                class Test {
-                    public void main(String... args) {
-                        //#if a
-                        System.out.println("Test succeeded.");
-                        //#else
-                        //$$ System.out.println("Test failed.");
-                        //#endif
-                    }
-                }
-                """, Files.readString(getTestJavaFile().toPath()));
+        assertEquals(
+                "package test;\n" +
+                "class Test {\n" +
+                "public void main(String... args) {\n" +
+                "//#if a\n" +
+                "System.out.println(\"Test succeeded.\");\n" +
+                "//#else\n" +
+                "//$$ System.out.println(\"Test failed\");\n" +
+                "//#endif\n" +
+                "}\n" +
+                "}\n", new String(Files.readAllBytes(getTestJavaFile().toPath())));
 
         // Run the kotlin build
         runner.withArguments("applyPreProcessKotlin");
@@ -131,17 +126,16 @@ class PreProcessorPluginFunctionalTest {
         for (BuildTask task : kotlinResult.getTasks()) {
             assertEquals(TaskOutcome.SUCCESS, task.getOutcome());
         }
-        assertEquals("""
-                class Test {
-                    fun main(args : Array<String>) {
-                        //#if a
-                        System.out.println("Test succeeded.");
-                        //#else
-                        //$$ System.out.println("Test failed.");
-                        //#endif
-                    }
-                }
-                """, Files.readString(getTestKotlinFile().toPath()));
+        assertEquals(
+                "class Test {\n" +
+                        "fun main(args : Array<String>) {\n" +
+                        "//#if a\n" +
+                        "System.out.println(\"Test succeeded.\");\n" +
+                        "//#else\n" +
+                        "//$$ System.out.println(\"Test failed\");\n" +
+                        "//#endif\n" +
+                        "}\n" +
+                        "}\n", new String(Files.readAllBytes(getTestKotlinFile().toPath())));
 
         // Run the resources build
         runner.withArguments("applyPreProcessResources");
@@ -152,15 +146,14 @@ class PreProcessorPluginFunctionalTest {
         for (BuildTask task : resourcesResult.getTasks()) {
             assertEquals(TaskOutcome.SUCCESS, task.getOutcome());
         }
-        assertEquals("""
-                {
-                    //#if a
-                    "test": "123"
-                    //#else
-                    //$$ "test": "456"
-                    //#endif
-                }
-                """, Files.readString(getTestJsonFile().toPath()));
+        assertEquals(
+                "{\n" +
+                        "//#if a\n" +
+                        "\"test\": \"123\"\n" +
+                        "//#else\n" +
+                        "//$$ \"test\": \"456\"\n" +
+                        "//#endif\n" +
+                        "}\n", new String(Files.readAllBytes(getTestJsonFile().toPath())));
     }
 
     private void writeString(File file, String string) throws IOException {
