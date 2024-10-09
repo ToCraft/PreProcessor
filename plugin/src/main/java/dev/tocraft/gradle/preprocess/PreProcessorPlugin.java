@@ -6,6 +6,7 @@ package dev.tocraft.gradle.preprocess;
 import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
 import dev.tocraft.gradle.preprocess.tasks.ApplyPreProcessTask;
 import dev.tocraft.gradle.preprocess.tasks.PreProcessTask;
+import dev.tocraft.gradle.preprocess.tasks.RemapTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
@@ -18,6 +19,7 @@ import org.gradle.language.jvm.tasks.ProcessResources;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * Main class for the PreProcessor-Plugin
@@ -33,14 +35,24 @@ public class PreProcessorPlugin implements Plugin<Project> {
         SourceSetContainer sourceSetContainer = project.getExtensions().findByType(SourceSetContainer.class);
         if (sourceSetContainer != null) {
             sourceSetContainer.configureEach(sourceSet -> {
-                String generated = "generated" + File.separatorChar + "preprocessed" + File.separatorChar + sourceSet.getName() + File.separatorChar;
+                final String genPre = "generated" + File.separatorChar;
+                final String genPost = File.separatorChar + sourceSet.getName() + File.separatorChar;
+                final String generatedPre = genPre + "preprocessed" + genPost;
+                final String generatedRe = genPre + "remap" + genPost;
 
                 // Java Source
-                TaskProvider<PreProcessTask> preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class, task -> {
+                TaskProvider<RemapTask> remapJava = project.getTasks().register(sourceSet.getTaskName("remap", "Java"), RemapTask.class, task -> {
                     task.getSources().convention(sourceSet.getJava().getSrcDirs());
+                    task.getMap().convention(ext.remapper);
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generatedRe + "java").map(RegularFile::getAsFile));
+                    task.getOutputs().upToDateWhen(t -> false);
+                });
+                TaskProvider<PreProcessTask> preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class, task -> {
+                    task.dependsOn(remapJava);
+                    task.getSources().convention(remapJava.flatMap(t -> t.getTarget().map(Arrays::asList)));
                     task.getVars().convention(ext.vars);
                     task.getKeywords().convention(ext.keywords);
-                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "java").map(RegularFile::getAsFile));
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generatedPre + "java").map(RegularFile::getAsFile));
                     task.getOutputs().upToDateWhen(t -> false);
                 });
 
@@ -53,11 +65,18 @@ public class PreProcessorPlugin implements Plugin<Project> {
 
                 // Kotlin
                 if (hasKotlin) {
-                    TaskProvider<PreProcessTask> preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class, task -> {
+                    TaskProvider<RemapTask> remapKotlin = project.getTasks().register(sourceSet.getTaskName("remap", "Kotlin"), RemapTask.class, task -> {
                         task.getSources().convention(((SourceDirectorySet) sourceSet.getExtensions().getByName("kotlin")).getSrcDirs());
+                        task.getMap().convention(ext.remapper);
+                        task.getTarget().set(project.getLayout().getBuildDirectory().file(generatedRe + "kotlin").map(RegularFile::getAsFile));
+                        task.getOutputs().upToDateWhen(t -> false);
+                    });
+                    TaskProvider<PreProcessTask> preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class, task -> {
+                        task.dependsOn(remapKotlin);
+                        task.getSources().convention(remapKotlin.flatMap(t -> t.getTarget().map(Arrays::asList)));
                         task.getVars().convention(ext.vars);
                         task.getKeywords().convention(ext.keywords);
-                        task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "kotlin").map(RegularFile::getAsFile));
+                        task.getTarget().set(project.getLayout().getBuildDirectory().file(generatedPre + "kotlin").map(RegularFile::getAsFile));
                         task.getOutputs().upToDateWhen(t -> false);
                     });
 
@@ -70,11 +89,18 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 }
 
                 // Resources
-                TaskProvider<PreProcessTask> preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class, task -> {
+                TaskProvider<RemapTask> remapResources = project.getTasks().register(sourceSet.getTaskName("remap", "Resources"), RemapTask.class, task -> {
                     task.getSources().convention(sourceSet.getResources().getSrcDirs());
+                    task.getMap().convention(ext.remapper);
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generatedRe + "resources").map(RegularFile::getAsFile));
+                    task.getOutputs().upToDateWhen(t -> false);
+                });
+                TaskProvider<PreProcessTask> preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class, task -> {
+                    task.dependsOn(remapResources);
+                    task.getSources().convention(remapResources.flatMap(t -> t.getTarget().map(Arrays::asList)));
                     task.getVars().convention(ext.vars);
                     task.getKeywords().convention(ext.keywords);
-                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "resources").map(RegularFile::getAsFile));
+                    task.getTarget().set(project.getLayout().getBuildDirectory().file(generatedPre + "resources").map(RegularFile::getAsFile));
                     task.getOutputs().upToDateWhen(t -> false);
                 });
 
