@@ -1,4 +1,4 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.util;
 
 import org.jetbrains.annotations.ApiStatus;
 

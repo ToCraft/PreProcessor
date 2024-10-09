@@ -1,4 +1,4 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.util;
 
 /**
  * Exception while parsing / reading the preprocessor code in a file

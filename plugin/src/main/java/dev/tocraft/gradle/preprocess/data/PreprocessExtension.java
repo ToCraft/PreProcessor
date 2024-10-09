@@ -1,4 +1,4 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.data;
 
 import java.util.HashMap;
 import java.util.Map;

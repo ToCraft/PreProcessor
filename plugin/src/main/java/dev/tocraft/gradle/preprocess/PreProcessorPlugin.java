@@ -3,6 +3,9 @@
  */
 package dev.tocraft.gradle.preprocess;
 
+import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
+import dev.tocraft.gradle.preprocess.tasks.ApplyPreProcessTask;
+import dev.tocraft.gradle.preprocess.tasks.PreProcessTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;

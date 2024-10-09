@@ -1,4 +1,4 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.data;
 
 /**
  * The defined keywords that will be taken into account by the preprocessor

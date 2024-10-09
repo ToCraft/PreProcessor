@@ -1,5 +1,9 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.tasks;
 
+import dev.tocraft.gradle.preprocess.data.Keywords;
+import dev.tocraft.gradle.preprocess.util.ParseException;
+import dev.tocraft.gradle.preprocess.util.PreProcessor;
+import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -74,7 +78,7 @@ public class PreProcessTask extends DefaultTask {
 
     /**
      * @return the vars that shall be used for the custom if-statements
-     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#vars
+     * @see PreprocessExtension#vars
      */
     @Input
     public MapProperty<String, Object> getVars() {
@@ -83,7 +87,7 @@ public class PreProcessTask extends DefaultTask {
 
     /**
      * @return custom keywords, where the key is something the target file name should end with (e.g. '.json') and the Keywords are the custom keywords for this file type.
-     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#keywords
+     * @see PreprocessExtension#keywords
      */
     @Input
     public MapProperty<String, Keywords> getKeywords() {

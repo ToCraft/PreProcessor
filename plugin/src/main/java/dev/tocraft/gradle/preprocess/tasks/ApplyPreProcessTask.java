@@ -1,4 +1,4 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.tasks;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -18,7 +18,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Task to overwrite the original source files with the results of the {@link dev.tocraft.gradle.preprocess.PreProcessTask}
+ * Task to overwrite the original source files with the results of the {@link PreProcessTask}
  */
 public class ApplyPreProcessTask extends DefaultTask {
     private final Property<File> source;

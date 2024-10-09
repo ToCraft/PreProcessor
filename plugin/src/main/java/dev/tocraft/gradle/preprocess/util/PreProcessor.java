@@ -1,5 +1,7 @@
-package dev.tocraft.gradle.preprocess;
+package dev.tocraft.gradle.preprocess.util;
 
+import dev.tocraft.gradle.preprocess.data.Keywords;
+import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -15,11 +17,11 @@ import java.util.regex.Pattern;
  */
 public class PreProcessor {
     /**
-     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#vars
+     * @see PreprocessExtension#vars
      */
     private final Map<String, Object> vars;
     /**
-     * @see dev.tocraft.gradle.preprocess.PreprocessExtension#keywords
+     * @see PreprocessExtension#keywords
      */
     private final Map<String, Keywords> keywordsMap;
 

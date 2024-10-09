@@ -3,6 +3,8 @@
  */
 package dev.tocraft.gradle.preprocess;
 
+import dev.tocraft.gradle.preprocess.util.ParseException;
+import dev.tocraft.gradle.preprocess.util.PreProcessor;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
