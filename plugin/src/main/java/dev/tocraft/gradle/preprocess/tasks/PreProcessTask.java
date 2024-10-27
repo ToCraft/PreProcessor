@@ -158,7 +158,10 @@ public class PreProcessTask extends DefaultTask {
         Set<File> foundInFiles = new HashSet<>();
         Set<File> foundOutFiles = new HashSet<>();
 
-        for (Entry entry : sourceFiles) {
+        // iterate backwards so files can overwrite each other
+        for (int i =  sourceFiles.size() - 1; i >= 0; i--) {
+            Entry entry = sourceFiles.get(i);
+
             File inFile = entry.inBase.resolve(entry.relPath).toFile();
             File outFile = entry.outBase.resolve(entry.relPath).toFile();
 

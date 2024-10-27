@@ -1,19 +1,19 @@
 package dev.tocraft.gradle.preprocess.tasks;
 
+import dev.tocraft.gradle.preprocess.data.Keywords;
+import dev.tocraft.gradle.preprocess.util.PreProcessor;
+import dev.tocraft.gradle.preprocess.util.ReMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
-import org.gradle.api.provider.Property;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.tasks.*;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,10 +21,11 @@ import java.util.Set;
  * Task to overwrite the original source files with the results of the {@link PreProcessTask}
  */
 public class ApplyPreProcessTask extends DefaultTask {
-    private final Property<File> source;
+    private final MapProperty<String, Object> vars;
+    private final MapProperty<String, String> remap;
+    private final MapProperty<String, Keywords> keywords;
     private final ListProperty<File> targets;
-    private final ConfigurableFileCollection outcomingFiles;
-    private final ConfigurableFileCollection incomingFiles;
+    private final ConfigurableFileCollection comingFiles;
 
     /**
      * @param factory        some object factory to crate the properties
@@ -33,18 +34,12 @@ public class ApplyPreProcessTask extends DefaultTask {
     @Inject
     public ApplyPreProcessTask(final ObjectFactory factory, final TaskProvider<PreProcessTask> preProcessTask) {
         this.targets = factory.listProperty(File.class).convention(preProcessTask.flatMap(PreProcessTask::getSources));
-        this.source = factory.property(File.class).convention(preProcessTask.flatMap(PreProcessTask::getTarget));
 
-        this.incomingFiles = factory.fileCollection();
-        this.outcomingFiles = factory.fileCollection();
-    }
+        this.vars = factory.mapProperty(String.class, Object.class).convention(preProcessTask.flatMap(PreProcessTask::getVars));
+        this.remap = factory.mapProperty(String.class, String.class).convention(preProcessTask.flatMap(PreProcessTask::getRemap));
+        this.keywords = factory.mapProperty(String.class, Keywords.class).convention(preProcessTask.flatMap(PreProcessTask::getKeywords));
 
-    /**
-     * @return source folder, where the preprocess task outputs it's files
-     */
-    @Input
-    public Property<File> getSource() {
-        return source;
+        this.comingFiles = factory.fileCollection();
     }
 
     /**
@@ -59,16 +54,8 @@ public class ApplyPreProcessTask extends DefaultTask {
      * @return the overwritten files
      */
     @OutputFiles
-    public FileCollection getOutcomingFiles() {
-        return this.outcomingFiles;
-    }
-
-    /**
-     * @return the files the preprocess task outputs, that will be processed by this task
-     */
-    @Internal
-    public FileCollection getIncomingFiles() {
-        return this.incomingFiles;
+    public FileCollection getComingFiles() {
+        return this.comingFiles;
     }
 
     @Internal
@@ -82,8 +69,10 @@ public class ApplyPreProcessTask extends DefaultTask {
      */
     @TaskAction
     public void applyPreProcess() {
-        Set<File> foundInFiles = new HashSet<>();
-        Set<File> foundOutFiles = new HashSet<>();
+        Set<File> foundFiles = new HashSet<>();
+
+        PreProcessor preProcessor = new PreProcessor(vars.get(), keywords.get());
+        ReMapper reMapper = new ReMapper(remap.get());
 
         // place file in their original source folder
         for (File srcFolder : targets.get()) {
@@ -92,21 +81,13 @@ public class ApplyPreProcessTask extends DefaultTask {
             // iterate over the existing files in the targets folders so the preprocessed files can be copied to their exact source folder
             // might be buggy when interfered by externals
             for (File file : getProject().fileTree(outBasePath)) {
-                Path relPath = outBasePath.relativize(file.toPath());
-                Path outPath = outBasePath.resolve(relPath);
-                Path inPath = source.get().toPath().resolve(relPath);
-                try {
-                    Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                // old school preprocessing
+                PreProcessTask.convertFile(preProcessor, reMapper, file, file);
 
-                foundInFiles.add(inPath.toFile());
-                foundOutFiles.add(outPath.toFile());
+                foundFiles.add(file);
             }
         }
 
-        this.outcomingFiles.setFrom(foundOutFiles);
-        this.incomingFiles.setFrom(foundInFiles);
+        this.comingFiles.setFrom(foundFiles);
     }
 }

@@ -1,6 +1,7 @@
 package dev.tocraft.gradle.preprocess.data;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -18,5 +19,5 @@ public class PreprocessExtension {
     /**
      * A map where each occurrence of a key in the code will be replaced with the respective value
      */
-    public Map<String, String> remapper = new HashMap<>();
+    public Map<String, String> remapper = new LinkedHashMap<>();
 }

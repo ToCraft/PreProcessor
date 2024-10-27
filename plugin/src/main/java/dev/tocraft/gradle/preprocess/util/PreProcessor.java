@@ -4,10 +4,6 @@ import dev.tocraft.gradle.preprocess.data.Keywords;
 import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -223,9 +219,9 @@ public class PreProcessor {
                 } else {
                     int currIndent = indentStack.peek();
                     if (trimmed.isEmpty()) {
-                        mappedLines.add(repeat(currIndent, " ") + keywords.EVAL());
+                        mappedLines.add(indentation(currIndent) + keywords.EVAL());
                     } else if (!trimmed.startsWith(keywords.EVAL()) && currIndent <= indentation) {
-                        mappedLines.add(repeat(currIndent, " ") + keywords.EVAL() + " " + line.substring(currIndent));
+                        mappedLines.add(indentation(currIndent) + keywords.EVAL() + " " + line.substring(currIndent));
                     } else {
                         mappedLines.add(line);
                     }
@@ -264,7 +260,7 @@ public class PreProcessor {
         return extension.toLowerCase().trim();
     }
 
-    private static String repeat(int n, String s) {
-        return new String(new char[n]).replace("\0", s);
+    private static String indentation(int n) {
+        return new String(new char[n]).replace("\0", " ");
     }
 }

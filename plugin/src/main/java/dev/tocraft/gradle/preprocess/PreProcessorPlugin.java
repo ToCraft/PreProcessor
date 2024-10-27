@@ -92,14 +92,14 @@ public class PreProcessorPlugin implements Plugin<Project> {
             });
         }
 
-        if (!project.getSubprojects().isEmpty()) {
-            project.getTasks().register("applyPreProcess").configure(task -> {
-                for (Project subproject : project.getSubprojects()) {
-                    for (ApplyPreProcessTask subApplyPreProcessTask : subproject.getTasks().withType(ApplyPreProcessTask.class)) {
-                        task.dependsOn(subApplyPreProcessTask);
-                    }
-                }
-            });
-        }
+        project.getTasks().register("applyPreProcess").configure(task -> {
+            for (ApplyPreProcessTask subApplyPreProcessTask : project.getTasks().withType(ApplyPreProcessTask.class)) {
+                task.dependsOn(subApplyPreProcessTask);
+            }
+
+            for (Project subproject : project.getSubprojects()) {
+                task.dependsOn(subproject.getTasks().named("applyPreProcess"));
+            }
+        });
     }
 }
