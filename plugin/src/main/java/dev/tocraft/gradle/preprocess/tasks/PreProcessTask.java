@@ -4,6 +4,7 @@ import dev.tocraft.gradle.preprocess.data.Keywords;
 import dev.tocraft.gradle.preprocess.util.ParseException;
 import dev.tocraft.gradle.preprocess.util.PreProcessor;
 import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
+import dev.tocraft.gradle.preprocess.util.ReMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -15,6 +16,7 @@ import org.gradle.api.tasks.*;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +30,7 @@ import java.util.Set;
  */
 public class PreProcessTask extends DefaultTask {
     private final MapProperty<String, Object> vars;
+    private final MapProperty<String, String> remap;
     private final MapProperty<String, Keywords> keywords;
     private final Property<File> target;
     private final ListProperty<File> sources;
@@ -40,6 +43,7 @@ public class PreProcessTask extends DefaultTask {
     @Inject
     public PreProcessTask(final ObjectFactory factory) {
         this.vars = factory.mapProperty(String.class, Object.class);
+        this.remap = factory.mapProperty(String.class, String.class);
         this.sources = factory.listProperty(File.class);
         this.keywords = factory.mapProperty(String.class, Keywords.class);
         this.target = factory.property(File.class);
@@ -58,6 +62,14 @@ public class PreProcessTask extends DefaultTask {
             this.inBase = inBase;
             this.outBase = outBase;
         }
+    }
+
+    /**
+     * @return the map that will be used for remapping
+     */
+    @Input
+    public MapProperty<String, String> getRemap() {
+        return remap;
     }
 
     /**
@@ -126,6 +138,7 @@ public class PreProcessTask extends DefaultTask {
         }
 
         PreProcessor preProcessor = new PreProcessor(vars.get(), keywords.get());
+        ReMapper reMapper = new ReMapper(remap.get());
 
         List<Entry> sourceFiles = new ArrayList<>();
 
@@ -149,7 +162,7 @@ public class PreProcessTask extends DefaultTask {
             File inFile = entry.inBase.resolve(entry.relPath).toFile();
             File outFile = entry.outBase.resolve(entry.relPath).toFile();
 
-            preProcessor.convertFile(inFile, outFile);
+            convertFile(preProcessor, reMapper, inFile, outFile);
 
             foundInFiles.add(inFile);
             foundOutFiles.add(outFile);
@@ -168,5 +181,34 @@ public class PreProcessTask extends DefaultTask {
         }
 
         getProject().getLogger().info("PreProcessed Successfully");
+    }
+
+    /**
+     * @param inFile  the file that shall be preprocessed
+     * @param outFile the file where the preprocessed lines shall be written to
+     */
+    public static void convertFile(PreProcessor preProcessor, ReMapper reMapper, File inFile, File outFile) {
+        try {
+            List<String> lines = Files.readAllLines(inFile.toPath());
+            lines = preProcessor.convertSource(lines, inFile.getName());
+            lines = reMapper.convertSource(lines);
+
+            //noinspection ResultOfMethodCallIgnored
+            outFile.getParentFile().mkdirs();
+            try (FileWriter writer = new FileWriter(outFile)) {
+                for (String line : lines) {
+                    writer.write(line + "\n");
+                }
+            }
+        } catch (IOException e) {
+            // some error while reading. Just copy the file
+            try {
+                //noinspection ResultOfMethodCallIgnored
+                outFile.getParentFile().mkdirs();
+                Files.copy(inFile.toPath(), outFile.toPath());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
     }
 }

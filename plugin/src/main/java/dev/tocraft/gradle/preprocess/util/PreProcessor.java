@@ -162,7 +162,7 @@ public class PreProcessor {
         Keywords keywords = keywordsMap.getOrDefault(getExtension(fileName), Keywords.DEFAULT_KEYWORDS);
 
         List<String> mappedLines = new ArrayList<>();
-        for (String line : lines) {
+        for (final String line : lines) {
             n++;
 
             String trimmed = line.trim();
@@ -237,33 +237,6 @@ public class PreProcessor {
             throw new ParseException("Missing endif!", n, fileName);
         } else {
             return mappedLines;
-        }
-    }
-
-    /**
-     * @param inFile  the file that shall be preprocessed
-     * @param outFile the file where the preprocessed lines shall be written to
-     */
-    public void convertFile(File inFile, File outFile) {
-        try {
-            List<String> lines = Files.readAllLines(inFile.toPath());
-            lines = convertSource(lines, inFile.getName());
-            //noinspection ResultOfMethodCallIgnored
-            outFile.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(outFile)) {
-                for (String line : lines) {
-                    writer.write(line + "\n");
-                }
-            }
-        } catch (IOException e) {
-            // some error while reading. Just copy the file
-            try {
-                //noinspection ResultOfMethodCallIgnored
-                outFile.getParentFile().mkdirs();
-                Files.copy(inFile.toPath(), outFile.toPath());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
         }
     }
 

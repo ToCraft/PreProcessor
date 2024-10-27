@@ -39,6 +39,7 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 TaskProvider<PreProcessTask> preprocessJava = project.getTasks().register(sourceSet.getTaskName("preprocess", "Java"), PreProcessTask.class, task -> {
                     task.getSources().convention(sourceSet.getJava().getSrcDirs());
                     task.getVars().convention(ext.vars);
+                    task.getRemap().convention(ext.remapper);
                     task.getKeywords().convention(ext.keywords);
                     task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "java").map(RegularFile::getAsFile));
                     task.getOutputs().upToDateWhen(t -> false);
@@ -56,7 +57,8 @@ public class PreProcessorPlugin implements Plugin<Project> {
                     TaskProvider<PreProcessTask> preprocessKotlin = project.getTasks().register(sourceSet.getTaskName("preprocess", "Kotlin"), PreProcessTask.class, task -> {
                         task.getSources().convention(((SourceDirectorySet) sourceSet.getExtensions().getByName("kotlin")).getSrcDirs());
                         task.getVars().convention(ext.vars);
-                        task.getKeywords().convention(ext.keywords);
+                    task.getRemap().convention(ext.remapper);
+                    task.getKeywords().convention(ext.keywords);
                         task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "kotlin").map(RegularFile::getAsFile));
                         task.getOutputs().upToDateWhen(t -> false);
                     });
@@ -73,6 +75,7 @@ public class PreProcessorPlugin implements Plugin<Project> {
                 TaskProvider<PreProcessTask> preprocessResources = project.getTasks().register(sourceSet.getTaskName("preprocess", "Resources"), PreProcessTask.class, task -> {
                     task.getSources().convention(sourceSet.getResources().getSrcDirs());
                     task.getVars().convention(ext.vars);
+                    task.getRemap().convention(ext.remapper);
                     task.getKeywords().convention(ext.keywords);
                     task.getTarget().set(project.getLayout().getBuildDirectory().file(generated + "resources").map(RegularFile::getAsFile));
                     task.getOutputs().upToDateWhen(t -> false);
