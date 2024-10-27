@@ -1,6 +1,7 @@
 package dev.tocraft.gradle.preprocess.util;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 @ApiStatus.Experimental
 public class ImportManager {
-    private static List<String> organizeImports(List<String> sourceLines) {
+    private static @NotNull List<String> organizeImports(@NotNull List<String> sourceLines) {
         Set<String> imports = new TreeSet<>();
         String packageLine = "";
         List<String> codeLines = new ArrayList<>();
@@ -62,7 +63,7 @@ public class ImportManager {
         return "";
     }
 
-    private static boolean anyStringInListContains(List<String> list, String str) {
+    private static boolean anyStringInListContains(@NotNull List<String> list, String str) {
         for (String s : list) {
             if (!s.trim().startsWith("//") && s.trim().contains(str)) {
                 return true;

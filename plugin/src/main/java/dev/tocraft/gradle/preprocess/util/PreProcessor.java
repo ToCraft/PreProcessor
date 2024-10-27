@@ -2,6 +2,7 @@ package dev.tocraft.gradle.preprocess.util;
 
 import dev.tocraft.gradle.preprocess.data.Keywords;
 import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public class PreProcessor {
      * @param fileName   required for error throwing
      * @return the value of the evaluated condition
      */
-    public boolean evalExpression(String condition, int lineNumber, @Nullable String fileName) {
+    public boolean evalExpression(@NotNull String condition, int lineNumber, @Nullable String fileName) {
         String[] parts = condition.split(OR_PATTERN);
         if (parts.length > 1) {
             return Arrays.stream(parts).anyMatch(it -> evalExpression(it.trim(), lineNumber, fileName));
@@ -132,7 +133,7 @@ public class PreProcessor {
         }
     }
 
-    private boolean _evalCondition(String condition, int lineNumber, String fileName) {
+    private boolean _evalCondition(@NotNull String condition, int lineNumber, String fileName) {
         if (!condition.startsWith(" ")) {
             throw new ParseException("Expected space before condition!", lineNumber, fileName);
         } else {
@@ -153,7 +154,7 @@ public class PreProcessor {
      * @param fileName the file name for error throwing
      * @return the preprocessed lines
      */
-    public List<String> convertSource(List<String> lines, @Nullable String fileName) {
+    public List<String> convertSource(@NotNull List<String> lines, @Nullable String fileName) {
         Stack<IfStackEntry> stack = new Stack<>();
         Stack<Integer> indentStack = new Stack<>();
         boolean active = true;
@@ -241,10 +242,11 @@ public class PreProcessor {
     }
 
     /**
+     * @param reMapper ReMapper to be used to replace matches in the files
      * @param inFile  the file that shall be preprocessed
      * @param outFile the file where the preprocessed lines shall be written to
      */
-    public void convertFile(ReMapper reMapper, File inFile, File outFile) {
+    public void convertFile(@NotNull ReMapper reMapper, @NotNull File inFile, @NotNull File outFile) {
         try {
             List<String> lines = Files.readAllLines(inFile.toPath());
             lines = this.convertSource(lines, inFile.getName());
@@ -282,7 +284,7 @@ public class PreProcessor {
 
     }
 
-    private static String getExtension(@Nullable String fileName) {
+    private static @NotNull String getExtension(@Nullable String fileName) {
         String extension = "";
         if (fileName != null) {
             int i = fileName.lastIndexOf('.');
@@ -293,7 +295,7 @@ public class PreProcessor {
         return extension.toLowerCase().trim();
     }
 
-    private static String indentation(int n) {
+    private static @NotNull String indentation(int n) {
         return new String(new char[n]).replace("\0", " ");
     }
 }

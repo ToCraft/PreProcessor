@@ -15,6 +15,7 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.jvm.tasks.ProcessResources;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 import java.io.File;
@@ -25,7 +26,7 @@ import java.io.File;
 @SuppressWarnings({"unused"})
 public class PreProcessorPlugin implements Plugin<Project> {
     @Override
-    public void apply(Project project) {
+    public void apply(@NotNull Project project) {
         PreprocessExtension ext = project.getExtensions().create("preprocess", PreprocessExtension.class);
 
         boolean hasKotlin = project.getPlugins().hasPlugin("kotlin");

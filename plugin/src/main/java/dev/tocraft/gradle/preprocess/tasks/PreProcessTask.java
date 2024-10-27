@@ -13,6 +13,7 @@ import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -41,7 +42,7 @@ public class PreProcessTask extends DefaultTask {
      * @param factory some object factory to create the properties
      */
     @Inject
-    public PreProcessTask(final ObjectFactory factory) {
+    public PreProcessTask(final @NotNull ObjectFactory factory) {
         this.vars = factory.mapProperty(String.class, Object.class);
         this.remap = factory.mapProperty(String.class, String.class);
         this.sources = factory.listProperty(File.class);

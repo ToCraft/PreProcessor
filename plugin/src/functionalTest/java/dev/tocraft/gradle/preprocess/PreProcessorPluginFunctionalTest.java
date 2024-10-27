@@ -7,6 +7,8 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,23 +27,28 @@ class PreProcessorPluginFunctionalTest {
     @TempDir
     File projectDir;
 
-    private File getBuildFile() {
+    @Contract(value = " -> new", pure = true)
+    private @NotNull File getBuildFile() {
         return new File(projectDir, "build.gradle");
     }
 
-    private File getSettingsFile() {
+    @Contract(value = " -> new", pure = true)
+    private @NotNull File getSettingsFile() {
         return new File(projectDir, "settings.gradle");
     }
 
-    private File getTestJavaFile() {
+    @Contract(value = " -> new", pure = true)
+    private @NotNull File getTestJavaFile() {
         return new File(projectDir, "src/main/java/test/Test.java");
     }
 
-    private File getTestKotlinFile() {
+    @Contract(value = " -> new", pure = true)
+    private @NotNull File getTestKotlinFile() {
         return new File(projectDir, "src/main/kotlin/test/Test.kt");
     }
 
-    private File getTestJsonFile() {
+    @Contract(value = " -> new", pure = true)
+    private @NotNull File getTestJsonFile() {
         return new File(projectDir, "src/main/resources/test.json5");
     }
 
@@ -156,7 +163,7 @@ class PreProcessorPluginFunctionalTest {
                         "}\n", new String(Files.readAllBytes(getTestJsonFile().toPath())));
     }
 
-    private void writeString(File file, String string) throws IOException {
+    private void writeString(@NotNull File file, String string) throws IOException {
         //noinspection ResultOfMethodCallIgnored
         file.getParentFile().mkdirs();
         try (Writer writer = new FileWriter(file)) {

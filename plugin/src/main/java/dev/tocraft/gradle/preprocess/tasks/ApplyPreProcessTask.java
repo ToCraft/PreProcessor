@@ -10,6 +10,7 @@ import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.tasks.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -32,7 +33,7 @@ public class ApplyPreProcessTask extends DefaultTask {
      * @param preProcessTask the delgate preprocess task to be used
      */
     @Inject
-    public ApplyPreProcessTask(final ObjectFactory factory, final TaskProvider<PreProcessTask> preProcessTask) {
+    public ApplyPreProcessTask(final @NotNull ObjectFactory factory, final @NotNull TaskProvider<PreProcessTask> preProcessTask) {
         this.targets = factory.listProperty(File.class).convention(preProcessTask.flatMap(PreProcessTask::getSources));
 
         this.vars = factory.mapProperty(String.class, Object.class).convention(preProcessTask.flatMap(PreProcessTask::getVars));

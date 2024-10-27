@@ -1,5 +1,7 @@
 package dev.tocraft.gradle.preprocess.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,7 @@ public class ReMapper {
      * @param lines    the file, already read as lines
      * @return the preprocessed lines
      */
-    public List<String> convertSource(List<String> lines) {
+    public List<String> convertSource(@NotNull List<String> lines) {
         List<String> rmLines = new ArrayList<>();
 
         for (String line : lines) {
