@@ -4,6 +4,10 @@ import dev.tocraft.gradle.preprocess.data.Keywords;
 import dev.tocraft.gradle.preprocess.data.PreprocessExtension;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -233,6 +237,35 @@ public class PreProcessor {
             throw new ParseException("Missing endif!", n, fileName);
         } else {
             return mappedLines;
+        }
+    }
+
+    /**
+     * @param inFile  the file that shall be preprocessed
+     * @param outFile the file where the preprocessed lines shall be written to
+     */
+    public void convertFile(ReMapper reMapper, File inFile, File outFile) {
+        try {
+            List<String> lines = Files.readAllLines(inFile.toPath());
+            lines = this.convertSource(lines, inFile.getName());
+            lines = reMapper.convertSource(lines);
+
+            //noinspection ResultOfMethodCallIgnored
+            outFile.getParentFile().mkdirs();
+            try (FileWriter writer = new FileWriter(outFile)) {
+                for (String line : lines) {
+                    writer.write(line + "\n");
+                }
+            }
+        } catch (IOException e) {
+            // some error while reading. Just copy the file
+            try {
+                //noinspection ResultOfMethodCallIgnored
+                outFile.getParentFile().mkdirs();
+                Files.copy(inFile.toPath(), outFile.toPath());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 

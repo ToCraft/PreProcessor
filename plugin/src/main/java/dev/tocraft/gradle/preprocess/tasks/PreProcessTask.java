@@ -165,7 +165,7 @@ public class PreProcessTask extends DefaultTask {
             File inFile = entry.inBase.resolve(entry.relPath).toFile();
             File outFile = entry.outBase.resolve(entry.relPath).toFile();
 
-            convertFile(preProcessor, reMapper, inFile, outFile);
+            preProcessor.convertFile(reMapper, inFile, outFile);
 
             foundInFiles.add(inFile);
             foundOutFiles.add(outFile);
@@ -184,34 +184,5 @@ public class PreProcessTask extends DefaultTask {
         }
 
         getProject().getLogger().info("PreProcessed Successfully");
-    }
-
-    /**
-     * @param inFile  the file that shall be preprocessed
-     * @param outFile the file where the preprocessed lines shall be written to
-     */
-    public static void convertFile(PreProcessor preProcessor, ReMapper reMapper, File inFile, File outFile) {
-        try {
-            List<String> lines = Files.readAllLines(inFile.toPath());
-            lines = preProcessor.convertSource(lines, inFile.getName());
-            lines = reMapper.convertSource(lines);
-
-            //noinspection ResultOfMethodCallIgnored
-            outFile.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(outFile)) {
-                for (String line : lines) {
-                    writer.write(line + "\n");
-                }
-            }
-        } catch (IOException e) {
-            // some error while reading. Just copy the file
-            try {
-                //noinspection ResultOfMethodCallIgnored
-                outFile.getParentFile().mkdirs();
-                Files.copy(inFile.toPath(), outFile.toPath());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
     }
 }

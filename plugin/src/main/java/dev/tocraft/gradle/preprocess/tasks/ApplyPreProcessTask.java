@@ -82,7 +82,7 @@ public class ApplyPreProcessTask extends DefaultTask {
             // might be buggy when interfered by externals
             for (File file : getProject().fileTree(outBasePath)) {
                 // old school preprocessing
-                PreProcessTask.convertFile(preProcessor, reMapper, file, file);
+                preProcessor.convertFile(reMapper, file, file);
 
                 foundFiles.add(file);
             }
