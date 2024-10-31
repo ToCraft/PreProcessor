@@ -749,4 +749,29 @@ class PreProcessorTest {
             }
         }));
     }
+
+    @Test
+    void testRemoveComments() {
+        PreProcessor preProcessor = new PreProcessor(true, vars);
+
+        assertEquals(new ArrayList<String>() {
+            {
+                add("code");
+                add("code");
+            }
+        }, preProcessor.convertSource(new ArrayList<String>() {
+            {
+                add("//#if zero");
+                add("//$$ code");
+                add("code");
+                add("//#elseif zero");
+                add("//$$ code");
+                add("code");
+                add("//#else");
+                add("//$$ code");
+                add("code");
+                add("//#endif");
+            }
+        }));
+    }
 }

@@ -9,6 +9,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,7 @@ import java.util.Set;
  * Task to overwrite the original source files with the results of the {@link PreProcessTask}
  */
 public class ApplyPreProcessTask extends DefaultTask {
+    private final Property<Boolean> removeComments;
     private final MapProperty<String, Object> vars;
     private final MapProperty<String, String> remap;
     private final MapProperty<String, Keywords> keywords;
@@ -34,6 +36,8 @@ public class ApplyPreProcessTask extends DefaultTask {
      */
     @Inject
     public ApplyPreProcessTask(final @NotNull ObjectFactory factory, final @NotNull TaskProvider<PreProcessTask> preProcessTask) {
+        this.removeComments = factory.property(Boolean.class).convention(false);
+
         this.targets = factory.listProperty(File.class).convention(preProcessTask.flatMap(PreProcessTask::getSources));
 
         this.vars = factory.mapProperty(String.class, Object.class).convention(preProcessTask.flatMap(PreProcessTask::getVars));
@@ -41,6 +45,14 @@ public class ApplyPreProcessTask extends DefaultTask {
         this.keywords = factory.mapProperty(String.class, Keywords.class).convention(preProcessTask.flatMap(PreProcessTask::getKeywords));
 
         this.comingFiles = factory.fileCollection();
+    }
+
+    /**
+     * @return if the preprocess task will remove commented preprocessor commands
+     */
+    @Internal
+    public Property<Boolean> getRemoveComments() {
+        return removeComments;
     }
 
     /**
@@ -72,7 +84,7 @@ public class ApplyPreProcessTask extends DefaultTask {
     public void applyPreProcess() {
         Set<File> foundFiles = new HashSet<>();
 
-        PreProcessor preProcessor = new PreProcessor(vars.get(), keywords.get());
+        PreProcessor preProcessor = new PreProcessor(removeComments.get(), vars.get(), keywords.get());
         ReMapper reMapper = new ReMapper(remap.get());
 
         // place file in their original source folder

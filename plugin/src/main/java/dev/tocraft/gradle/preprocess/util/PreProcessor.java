@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  * The actual preprocessing is happening here
  */
 public class PreProcessor {
+    private final boolean removeComments;
     /**
      * @see PreprocessExtension#vars
      */
@@ -33,11 +34,20 @@ public class PreProcessor {
         this(vars, new HashMap<>());
     }
 
+    public PreProcessor(Boolean removeComments, Map<String, Object> vars) {
+        this(removeComments, vars, new HashMap<>());
+    }
+
     /**
      * @param vars        the vars that shall be used for the custom if-statements
      * @param keywordsMap custom keywords, where the key is something the target file name should end with (e.g. '.json') and the Keywords are the custom keywords for this file type.
      */
     public PreProcessor(Map<String, Object> vars, Map<String, Keywords> keywordsMap) {
+        this(false, vars, keywordsMap);
+    }
+
+    public PreProcessor(boolean removeComments, Map<String, Object> vars, Map<String, Keywords> keywordsMap) {
+        this.removeComments = removeComments;
         this.vars = vars;
         this.keywordsMap = keywordsMap;
     }
@@ -173,7 +183,9 @@ public class PreProcessor {
                 stack.push(new IfStackEntry(result, false, result));
                 indentStack.push(indentation);
                 active = active && result;
-                mappedLines.add(line);
+                if (!removeComments) {
+                    mappedLines.add(line);
+                }
             } else if (trimmed.startsWith(keywords.ELSEIF())) {
                 if (stack.isEmpty()) {
                     throw new ParseException("elseif without If-Statement!", n, fileName);
@@ -195,7 +207,9 @@ public class PreProcessor {
                     stack.push(new IfStackEntry(result, false, result));
                     active = stack.stream().allMatch(it -> it.currentValue);
                 }
-                mappedLines.add(line);
+                if (!removeComments) {
+                    mappedLines.add(line);
+                }
             } else if (trimmed.startsWith(keywords.ELSE())) {
                 if (stack.isEmpty()) {
                     throw new ParseException("Unexpected else", n, fileName);
@@ -205,7 +219,9 @@ public class PreProcessor {
                 indentStack.pop();
                 indentStack.push(indentation);
                 active = stack.stream().allMatch(it -> it.currentValue);
-                mappedLines.add(line);
+                if (!removeComments) {
+                    mappedLines.add(line);
+                }
             } else if (trimmed.startsWith(keywords.ENDIF())) {
                 if (stack.isEmpty()) {
                     throw new ParseException("endif without If-Statement!", n, fileName);
@@ -213,7 +229,9 @@ public class PreProcessor {
                 stack.pop();
                 indentStack.pop();
                 active = stack.stream().allMatch(it -> it.currentValue);
-                mappedLines.add(line);
+                if (!removeComments) {
+                    mappedLines.add(line);
+                }
             } else {
                 if (active) {
                     if (trimmed.startsWith(keywords.EVAL())) {
@@ -221,7 +239,7 @@ public class PreProcessor {
                     } else {
                         mappedLines.add(line);
                     }
-                } else {
+                } else if (!removeComments) {
                     int currIndent = indentStack.peek();
                     if (trimmed.isEmpty()) {
                         mappedLines.add(indentation(currIndent) + keywords.EVAL());

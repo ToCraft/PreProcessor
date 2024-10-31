@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +29,7 @@ import java.util.Set;
  * The actual preprocessor task
  */
 public class PreProcessTask extends DefaultTask {
+    private final Property<Boolean> removeComments;
     private final MapProperty<String, Object> vars;
     private final MapProperty<String, String> remap;
     private final MapProperty<String, Keywords> keywords;
@@ -43,6 +43,7 @@ public class PreProcessTask extends DefaultTask {
      */
     @Inject
     public PreProcessTask(final @NotNull ObjectFactory factory) {
+        this.removeComments = factory.property(Boolean.class).convention(false);
         this.vars = factory.mapProperty(String.class, Object.class);
         this.remap = factory.mapProperty(String.class, String.class);
         this.sources = factory.listProperty(File.class);
@@ -63,6 +64,14 @@ public class PreProcessTask extends DefaultTask {
             this.inBase = inBase;
             this.outBase = outBase;
         }
+    }
+
+    /**
+     * @return if the preprocess task will remove commented preprocessor commands
+     */
+    @Internal
+    public Property<Boolean> getRemoveComments() {
+        return removeComments;
     }
 
     /**
@@ -138,7 +147,7 @@ public class PreProcessTask extends DefaultTask {
             throw new ParseException("No sources defined or source folder is empty!");
         }
 
-        PreProcessor preProcessor = new PreProcessor(vars.get(), keywords.get());
+        PreProcessor preProcessor = new PreProcessor(removeComments.get(), vars.get(), keywords.get());
         ReMapper reMapper = new ReMapper(remap.get());
 
         List<Entry> sourceFiles = new ArrayList<>();

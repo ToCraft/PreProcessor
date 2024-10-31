@@ -17,7 +17,7 @@ plugins {
 group = "dev.tocraft"
 def pluginId = 'preprocessor'
 
-version = "1.2"
+version = "1.4"
 
 repositories {
     // Use Maven Central for resolving dependencies.
