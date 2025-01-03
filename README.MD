@@ -2,7 +2,7 @@
 
 # PreProcessor
 
-This Gradle-Plugin is inspired by [JCP](https://github.com/raydac/java-comment-preprocessor).
+This Gradle-Plugin is based on [RePlayMod's PreProcessor](https://github.com/ReplayMod/preprocessor).
 
 It automatically preprocesses Kotlin, Java and Text Resources.
 
